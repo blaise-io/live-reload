@@ -1,0 +1,21 @@
+[
+  {
+    "id": "1",
+    "host": {
+      "pattern": "^http:\\/\\/localhost\\/.*",
+      "flags": "i"
+    },
+    "files": [
+      {
+        "file": {
+          "pattern": "^http:\\/\\/localhost\\/.*\\.js",
+          "flags": "i"
+        },
+        "reload": {
+          "strategy": "hash",
+          "interval": 10000
+        }
+      }
+    ]
+  }
+]
