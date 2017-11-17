@@ -10,7 +10,8 @@
   },
   "browser_action": {
     "browser_style": true,
-    "default_icon": "icons/icon.svg"
+    "default_icon": "icons/icon.svg",
+    "default_popup": "popup/popup.html"
   },
   "permissions": [
     "<all_urls>",

@@ -1,6 +1,8 @@
 // TODO: UI for rules.
 // TODO: Restart when rules changes.
-// TODO: Stop when tab closes.
+// TODO: Determine lifetime of a rule.
+// TODO: Store rules in storage.sync
+// TODO: Reload stylesheet, not page
 
 const rules = [
   {

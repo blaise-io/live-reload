@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <!-- Overview of reload rules -->
+    <section>
+        <ul>
+            <li>
+                <strong><span class="icon">✓</span> Live Reload is active</strong>
+            </li>
+            <li>
+                <strong>Add a new reload rule</strong>
+            </li>
+            <li class="rule">
+                <div>My first reload rule</div>
+            </li>
+            <li class="rule">
+                <div>Another placeholder</div>
+            </li>
+        </ul>
+    </section>
+
+    <!-- Reload rule form -->
+    <!-- TODO: Move to options? This is a bad place, closes when losing focus! -->
+    <!--
+    <section>
+        <div class="form-row form-row-header">
+            Create new reload rule
+        </div>
+        <div class="form-row"><small>
+            When a tab's URL matches the host
+            <a href="https://developer.mozilla.org/en-US/Add-ons/WebExtensions/Match_patterns">match pattern</a>,
+            all scripts and styles included on that page are matched against all source file match patterns.
+            Any matching source file will be monitored for changes.
+        </small></div>
+        <div class="form-row">
+            <label>Title</label>
+            <input required type="text" maxlength="64">
+        </div>
+        <div class="form-row">
+            <label>Host match pattern</label>
+            <input required type="text"
+                   pattern="^(<all_urls>|(?:(\*|http|https|file|ftp|app):\/\/([^\/]+|)\/?(.*)))$">
+        </div>
+        <div class="form-row">
+            <label>Monitoring interval</label>
+            <input required type="number" min="0.5" step="0.5" value="2"> seconds
+        </div>
+        <div class="form-row">
+            <label>Source file match pattern</label>
+            <input required type="text"
+                pattern="^(<all_urls>|(?:(\*|http|https|file|ftp|app):\/\/([^\/]+|)\/?(.*)))$">
+            <input type="text"
+                pattern="^(<all_urls>|(?:(\*|http|https|file|ftp|app):\/\/([^\/]+|)\/?(.*)))$">
+            <button>+</button>
+        </div>
+        <div class="form-row">
+            <button>Cancel</button>
+            <button>Create rule</button>
+        </div>
+    </section>
+    -->
+
+</body>
+</html>
