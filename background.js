@@ -101,7 +101,6 @@ chrome.runtime.onMessage.addListener((message, sender) => {
 // Record last tab so we can pre-populate the add reload rule form.
 function recordTab(tab) {
     if (!tab.incognito && tab.url.match(/^(https?|file|ftp|app)/)) {
-        console.log('RECORDED', tab.url, tab);
         Object.assign(tabData, tab);
     }
 }

@@ -6,5 +6,5 @@ document.querySelectorAll('[data-pop]').forEach((el) => {
             left=${Math.min(screen.width - 420, event.screenX)},
             top=${event.screenY + 20}`
         );
-    })
+    });
 });
