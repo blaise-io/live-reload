@@ -1,0 +1,69 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Create a new reload rule</title>
+    <link rel="stylesheet" href="chrome://browser/content/extension.css">
+    <link rel="stylesheet" href="chrome://browser/content/extension-mac.css">
+    <link rel="stylesheet" href="../popup/popup.css">
+</head>
+<body>
+    <section>
+        <h2 class="form-row">
+            Create a new reload rule
+        </h2>
+        <div class="form-row help">
+            When a tab's URL matches the host’s
+            <a href="https://developer.mozilla.org/en-US/Add-ons/WebExtensions/Match_patterns" class="code" target="_blank">match pattern</a>,
+            all scripts and styles included on that page are matched against all source file match patterns.
+            Any matching source file will be monitored for changes.
+        </div>
+        <div class="form-row browser-style">
+            <label for="title">Title</label>
+            <input autofocus
+                   id="title"
+                   required
+                   type="text"
+                   maxlength="64"
+                   placeholder="This title will be visible in the overview">
+        </div>
+        <div class="form-row browser-style">
+            <label for="host">Host match pattern</label>
+            <input id="host"
+                   class="code browser-style"
+                   required
+                   type="text"
+                   placeholder="https://example.org/*"
+                   pattern="^(<all_urls>|(?:(\*|http|https|file|ftp|app):\/\/([^\/]+|)\/?(.*)))$">
+        </div>
+        <div class="form-row browser-style">
+            <label for="interval">Monitoring interval</label>
+            <input id="interval"
+                   required
+                   type="number"
+                   min="0.5"
+                   step="0.5"
+                   value="2"> seconds
+        </div>
+        <div class="form-row browser-style">
+            <label for="sources">Source file match patterns</label>
+            <div class="help">
+                Separate multiple rules with one or more line breaks.
+                Each matching file on the host page will be polled separately.
+                To prevent unnecessary polling, avoid broad patterns.
+            </div>
+            <textarea id="sources"
+                      placeholder="https://example.org/src/*.js"
+                      class="code browser-style"
+                      required></textarea>
+        </div>
+        <div class="form-row form-submit browser-style">
+            <!-- TODO: Split into create and add -->
+            <!-- TODO: Validate source file match patterns -->
+            <!-- TODO: Store rules -->
+            <button class="browser-style">Create reload rule</button>
+        </div>
+    </section>
+    <script src="add.js"></script>
+</body>
+</html>

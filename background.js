@@ -1,7 +1,7 @@
 // TODO: UI for rules.
 // TODO: Restart when rules changes.
 // TODO: Determine lifetime of a rule.
-// TODO: Store rules in storage.sync
+// TODO: Retrieve from and store rules in storage.sync
 // TODO: Reload stylesheet, not page
 
 const rules = [
@@ -29,7 +29,9 @@ const rules = [
 ];
 
 
+const tabData = {};
 const registry = {};
+
 
 // Prepare regexps
 rules.forEach((rule) => {
@@ -51,24 +53,58 @@ browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
             }
         });
     }
+
+    recordTab(tab);
+});
+
+
+// Record tab when tab URL changes.
+browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
+    if (tab.status === 'complete') {
+        recordTab(tab);
+    }
+});
+
+
+// Record tab when active tab changes.
+browser.tabs.onActivated.addListener((activeTab) => {
+    browser.tabs.get(activeTab.tabId).then(recordTab);
 });
 
 
 // Listen to page reports.
 chrome.runtime.onMessage.addListener((message, sender) => {
     // Find rule again.
-    rules.forEach((rule) => {
-        if (sender.tab.url.match(rule.hostRegexp)) {
-            message.scripts.concat(message.styles).forEach((url) => {
-                rule.files.forEach((file) => {
-                    if (url.match(file.fileRegexp)) {
-                        checkFileChanged(sender.tab, file, url);
-                    }
-                });
+    switch (message.type) {
+
+        case 'requestTabData':
+            chrome.runtime.sendMessage({type: 'tabData', tabData});
+            break;
+
+        case 'pageSourceFiles':
+            rules.forEach((rule) => {
+                if (sender.tab.url.match(rule.hostRegexp)) {
+                    message.scripts.concat(message.styles).forEach((url) => {
+                        rule.files.forEach((file) => {
+                            if (url.match(file.fileRegexp)) {
+                                checkFileChanged(sender.tab, file, url);
+                            }
+                        });
+                    });
+                }
             });
-        }
-    });
+            break;
+    }
 });
+
+
+// Record last tab so we can pre-populate the add reload rule form.
+function recordTab(tab) {
+    if (!tab.incognito && tab.url.match(/^(https?|file|ftp|app)/)) {
+        console.log('RECORDED', tab.url, tab);
+        Object.assign(tabData, tab);
+    }
+}
 
 
 function checkFileChanged(tab, file, url) {
