@@ -9,7 +9,7 @@ const rules = [
     'id': 'id1',
     'host': {
         'regexp': {
-            'pattern': '^http:\\/\\/localhost:18000\\/.*',
+            'pattern': '.*:8000\\/dashboard',
             'flags': 'i',
         },
     },
@@ -17,7 +17,7 @@ const rules = [
       {
         'id': 'id2',
         'regexp': {
-          'pattern': '^http:\\/\\/localhost:18000\\/.*\\.js',
+          'pattern': 'reporting_dashboard\\/app\\.js',
           'flags': 'i',
         },
         'reload': {
@@ -52,9 +52,9 @@ browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
                 browser.tabs.executeScript(tab.id, {file});
             }
         });
+    } else {
+        // TODO: Kill all existing monitoring for this tab.
     }
-
-    recordTab(tab);
 });
 
 
@@ -114,12 +114,13 @@ function checkFileChanged(tab, file, url) {
     }
 
     const fileRegistry = tabRegistry[file.id];
+    clearTimeout(fileRegistry.timer)
 
     getFileHash(url).then((hash) => {
         const oldHash = fileRegistry.hash;
         fileRegistry['hash'] = hash;
         if (!oldHash || oldHash === hash) {
-            setTimeout(() => {
+            fileRegistry.timer = setTimeout(() => {
                 checkFileChanged(tab, file, url);
             }, file.reload.interval);
         } else {
@@ -127,7 +128,7 @@ function checkFileChanged(tab, file, url) {
         }
     }).catch((error) => {
         console.error(`Error retrieving hash for ${url}`, error);  // eslint-disable-line
-        setTimeout(() => {
+        fileRegistry.timer = setTimeout(() => {
             checkFileChanged(tab, file, url);
         }, file.reload.interval);
     });
