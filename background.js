@@ -1,59 +1,62 @@
-// TODO: UI for rules.
-// TODO: Restart when rules changes.
+// TODO: UI for editing and deleting rules.
+// TODO: Restart when rules change.
 // TODO: Determine lifetime of a rule.
-// TODO: Retrieve from and store rules in storage.sync
 // TODO: Reload stylesheet, not page
 
-const rules = [
-  {
-    'id': 'id1',
-    'host': {
-        'regexp': {
-            'pattern': '.*:8000\\/dashboard',
-            'flags': 'i',
-        },
-    },
-    'files': [
-      {
-        'id': 'id2',
-        'regexp': {
-          'pattern': 'reporting_dashboard\\/app\\.js',
-          'flags': 'i',
-        },
-        'reload': {
-          'interval': 2000,
-        },
-      },
-    ],
-  },
-];
-
+const MATCH_PATTERN = (/^(?:(\*|https?|file|ftp|app):\/\/([^/]+|)\/?(.*))$/i);
+const ALL_URLS = (/^(?:https?|file|ftp|app):\/\//);
 
 const tabData = {};
 const registry = {};
+const rules = [];
 
 
-// Prepare regexps
-rules.forEach((rule) => {
-    const hostRegexp = rule.host.regexp;
-    rule.hostRegexp = new RegExp(hostRegexp.pattern, hostRegexp.flags);
-    rule.files.forEach((file) => {
-        file.fileRegexp = new RegExp(file.regexp.pattern, file.regexp.flags);
-    });
+// Fetch reload rules from storage.
+browser.storage.sync.get('rules').then((result) => {
+    updateReloadRules(result.rules);
+}).catch((error) => {
+    console.error('Error retrieving rules:', error);
 });
 
-// Monitor tab for rule host matches.
+
+// Whenever a page in a tab is done loading, check whether the page
+// requires any source file monitoring.
 browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
-    const file = 'inject.js';
     if (tab.status === 'complete') {
+        disableAllMonitoring(tab.id);
         rules.forEach((rule) => {
-            if (tab.url.match(rule.hostRegexp)) {
-                registry[tab.id] = registry[tab.id] || {};
-                browser.tabs.executeScript(tab.id, {file});
+            // Host matches pattern, start monitoring.
+            if (tab.url.match(rule.hostRegExp)) {
+                const code = `(${inject.toSource()})("${rule.id}");`;
+                browser.tabs.executeScript(tab.id, {code});
+                // Flow continues at "pageSourceFiles" message listener.
             }
         });
-    } else {
-        // TODO: Kill all existing monitoring for this tab.
+    }
+});
+
+browser.tabs.onRemoved.addListener((tabId) => {
+    disableAllMonitoring(tabId);
+});
+
+
+// Pick up on messages.
+chrome.runtime.onMessage.addListener((message, sender) => {
+    switch (message.type) {
+        case 'updatedReloadRules':
+            updateReloadRules(message.rules);
+            break;
+        case 'pageSourceFiles':
+            // Retrieve rule again.
+            rules.forEach((rule) => {
+                if (message.rule === rule.id) {
+                    checkSourceFileMatches(message, rule, sender.tab);
+                }
+            });
+            break;
+        case 'requestTabData':
+            chrome.runtime.sendMessage({type: 'tabData', tabData});
+            break;
     }
 });
 
@@ -72,65 +75,75 @@ browser.tabs.onActivated.addListener((activeTab) => {
 });
 
 
-// Listen to page reports.
-chrome.runtime.onMessage.addListener((message, sender) => {
-    // Find rule again.
-    switch (message.type) {
-
-        case 'requestTabData':
-            chrome.runtime.sendMessage({type: 'tabData', tabData});
-            break;
-
-        case 'pageSourceFiles':
-            rules.forEach((rule) => {
-                if (sender.tab.url.match(rule.hostRegexp)) {
-                    message.scripts.concat(message.styles).forEach((url) => {
-                        rule.files.forEach((file) => {
-                            if (url.match(file.fileRegexp)) {
-                                checkFileChanged(sender.tab, file, url);
-                            }
-                        });
-                    });
-                }
-            });
-            break;
+function updateReloadRules(updateRules) {
+    rules.length = 0;  // Truncate but keep reference.
+    if (updateRules instanceof Array) {
+        rules.push(...updateRules);
     }
-});
+    // Prepare regexps
+    rules.forEach((rule) => {
+        rule.hostRegExp = matchPatternAsRegExp(rule.host);
+        rule.sourceRegExps = rule.sources.map((source) => {
+            return matchPatternAsRegExp(source);
+        });
+    });
+}
 
 
-// Record last tab so we can pre-populate the add reload rule form.
+function checkSourceFileMatches(source, rule, tab) {
+    const files = source.scripts.concat(source.styles);
+    files.forEach((url) => {
+        rule.sourceRegExps.forEach((regExp) => {
+            if (url.match(regExp)) {
+                const interval = rule.interval * 1000;  // s -> ms
+                checkSourceFileChanged(tab, interval, regExp.source, url);
+            }
+        });
+    });
+}
+
+
+// We record the last tab accessed to populate the add reload rule form.
 function recordTab(tab) {
-    if (!tab.incognito && tab.url.match(/^(https?|file|ftp|app)/)) {
+    if (!tab.incognito && tab.url.match(ALL_URLS)) {
         Object.assign(tabData, tab);
     }
 }
 
 
-function checkFileChanged(tab, file, url) {
+function disableAllMonitoring(tabId) {
+    Object.values(registry[tabId] || {}).forEach((fileRegistry) => {
+        clearTimeout(fileRegistry.timer);
+    });
+}
+
+
+function checkSourceFileChanged(tab, interval, sourceId, url) {
+    registry[tab.id] = registry[tab.id] || {};
     const tabRegistry = registry[tab.id];
 
-    if (!tabRegistry[file.id]) {
-        tabRegistry[file.id] = {};
+    if (!tabRegistry[sourceId]) {
+        tabRegistry[sourceId] = {};
     }
 
-    const fileRegistry = tabRegistry[file.id];
-    clearTimeout(fileRegistry.timer)
+    const fileRegistry = tabRegistry[sourceId];
+    clearTimeout(fileRegistry.timer);
 
     getFileHash(url).then((hash) => {
         const oldHash = fileRegistry.hash;
         fileRegistry['hash'] = hash;
         if (!oldHash || oldHash === hash) {
             fileRegistry.timer = setTimeout(() => {
-                checkFileChanged(tab, file, url);
-            }, file.reload.interval);
+                checkSourceFileChanged(...arguments);
+            }, interval);
         } else {
             browser.tabs.reload(tab.id);
         }
     }).catch((error) => {
-        console.error(`Error retrieving hash for ${url}`, error);  // eslint-disable-line
+        console.error(`Error retrieving hash for ${url}`, error);
         fileRegistry.timer = setTimeout(() => {
-            checkFileChanged(tab, file, url);
-        }, file.reload.interval);
+            checkSourceFileChanged(...arguments);
+        }, interval);
     });
 }
 
@@ -165,4 +178,60 @@ function sha1(str) {
         }
         return segments.join('');
     });
+}
+
+function inject(rule) {
+    const scriptElements = document.querySelectorAll('script[src]');
+    const styleElements = document.querySelectorAll('link[rel]');
+
+    chrome.runtime.sendMessage({
+        type: 'pageSourceFiles',
+        rule: rule,
+        scripts: Array.from(scriptElements).map((el) => el.src),
+        styles: Array.from(styleElements).map((el) => el.href),
+    });
+}
+
+
+/**
+ * https://developer.mozilla.org/en-US/Add-ons/WebExtensions/Match_patterns
+ * #Converting_Match_Patterns_to_Regular_Expressions
+ */
+function matchPatternAsRegExp(pattern) {
+    if (pattern === '<all_urls>') {
+        return ALL_URLS;
+    }
+
+    const match = MATCH_PATTERN.exec(pattern);
+
+    if (match === null) {
+        console.error(`Invalid match pattern: ${pattern}`);
+        return (/^$/);
+    }
+
+    let [, scheme, host, path] = match;
+
+    if (scheme === '*') {
+        scheme = 'https?';
+    } else {
+        scheme = escape(scheme);
+    }
+
+    if (host === '*') {
+        host = '[^\\/]*';
+    } else {
+        host = escape(host)
+            .replace('%3A', ':')
+            .replace(/^\*\./g, '(?:[^\\/]+)?');
+    }
+
+    if (path === '*') {
+        path = '(?:\\/.*)?';
+    } else if (path) {
+        path = `\\/${escape(path).replace(/\*/g, '.*')}`;
+    } else {
+        path = '\\/?';
+    }
+
+    return new RegExp(`^(?:${scheme}://${host}${path})$`);
 }

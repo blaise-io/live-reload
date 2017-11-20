@@ -15,8 +15,8 @@
   },
   "permissions": [
     "<all_urls>",
-    "activeTab",
-    "tabs"
+    "tabs",
+    "storage"
   ],
   "applications": {
     "gecko": {
