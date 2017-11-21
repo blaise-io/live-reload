@@ -4,6 +4,9 @@
     "browser": true,
     "es6": true
   },
+  "parserOptions": {
+    "ecmaVersion": 2017
+  },
   "rules": {
     "arrow-parens": [2, "always"],
     "comma-dangle": [2, "always-multiline"],

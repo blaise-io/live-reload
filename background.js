@@ -118,66 +118,59 @@ function disableAllMonitoring(tabId) {
 }
 
 
-function checkSourceFileChanged(tab, interval, sourceId, url) {
-    registry[tab.id] = registry[tab.id] || {};
-    const tabRegistry = registry[tab.id];
+async function checkSourceFileChanged(tab, interval, sourceId, url) {
+    let hash;
+    const tabRegistry = registry[tab.id] = registry[tab.id] || {};
+    const fileRegistry = tabRegistry[sourceId] = tabRegistry[sourceId] || {};
 
-    if (!tabRegistry[sourceId]) {
-        tabRegistry[sourceId] = {};
+    try {
+        hash = await getFileHash(url);
+    } catch (error) {
+        console.error(`Error retrieving hash for ${url}`, error);
     }
 
-    const fileRegistry = tabRegistry[sourceId];
-    clearTimeout(fileRegistry.timer);
-
-    getFileHash(url).then((hash) => {
-        const oldHash = fileRegistry.hash;
-        fileRegistry['hash'] = hash;
-        if (!oldHash || oldHash === hash) {
-            fileRegistry.timer = setTimeout(() => {
-                checkSourceFileChanged(...arguments);
-            }, interval);
-        } else {
-            browser.tabs.reload(tab.id);
-        }
-    }).catch((error) => {
-        console.error(`Error retrieving hash for ${url}`, error);
+    // Check whether the source file hash has changed.
+    if (hash && fileRegistry.hash && fileRegistry.hash !== hash) {
+        // Changed: reload tab.
+        browser.tabs.reload(tab.id);
+    } else {
+        // Not changed or old/new hash cannot be retrieved:
+        // Retry later.
+        clearTimeout(fileRegistry.timer);
         fileRegistry.timer = setTimeout(() => {
             checkSourceFileChanged(...arguments);
         }, interval);
-    });
+    }
+
+    // Update registry with latest hash.
+    fileRegistry.hash = hash || fileRegistry.hash;
 }
 
 
 /**
  * Get file contents and hash it.
  */
-function getFileHash(url) {
-    return new Promise((resolve, reject) => {
-        fetch(url, {cache: 'reload'})
-            .then((response) => response.text())
-            .then(sha1)
-            .then(resolve)
-            .catch(reject);
-    });
+async function getFileHash(url) {
+    const response = await fetch(url, {cache: 'reload'});
+    const text = await response.text();
+    return await sha1(text);
 }
 
 
 /**
  * Sha1 hash of a string.
  */
-function sha1(str) {
-    const buffer = new TextEncoder('utf-8').encode(str);
-    return crypto.subtle.digest('SHA-1', buffer).then(function(buffer) {
-        const segments = [];
-        const padding = '00000000';
-        const view = new DataView(buffer);
-        for (let i = 0; i < view.byteLength; i += 4) {
-            const hexStr = view.getUint32(i).toString(16);
-            const padStr = (padding + hexStr).slice(-padding.length);
-            segments.push(padStr);
-        }
-        return segments.join('');
-    });
+async function sha1(str) {
+    const encodedText = new TextEncoder('utf-8').encode(str);
+    const sha1Buffer = await crypto.subtle.digest('SHA-1', encodedText);
+    const segments = '';
+    const padZeroes = '00000000';
+    const dataView = new DataView(sha1Buffer);
+    for (let i = 0; i < dataView.byteLength; i += 4) {
+        const hexString = dataView.getUint32(i).toString(16);
+        segments += (padZeroes + hexString).slice(-padZeroes.length);
+    }
+    return segments;
 }
 
 function inject(rule) {

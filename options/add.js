@@ -46,13 +46,14 @@ function formSubmit(event) {
 }
 
 
-function createNewRule(rule) {
-    browser.storage.sync.get('rules').then((rules) => {
-        return saveRules((rules.rules || []).concat(rule));
-    }).catch((error) => {
-        window.alert('Error saving rule: ', error.message);
+async function createNewRule(rule) {
+    try {
+        const result = await browser.storage.sync.get('rules');
+        return saveRules((result.rules || []).concat(rule));
+    } catch (error) {
+        window.alert('Cannot access rules: ', error.message);
         console.error(error);
-    });
+    }
 }
 
 
