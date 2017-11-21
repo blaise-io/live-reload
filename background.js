@@ -1,10 +1,9 @@
 // TODO: UI for editing and deleting rules.
-// TODO: Restart when rules change.
-// TODO: Determine lifetime of a rule.
-// TODO: Reload stylesheet, not page
+// TODO: Inline reload option.
 
-const MATCH_PATTERN = (/^(?:(\*|https?|file|ftp|app):\/\/([^/]+|)\/?(.*))$/i);
-const ALL_URLS = (/^(?:https?|file|ftp|app):\/\//);
+// When enabled, files will be monitored,
+// when disabled rules can still be managed.
+let addonEnabled = true;
 
 const tabData = {};
 const registry = {};
@@ -19,11 +18,17 @@ browser.storage.sync.get('rules').then((result) => {
 });
 
 
+// Fetch active state.
+browser.storage.local.get('addonEnabled').then((result) => {
+    addonEnabled = result.addonEnabled !== false;
+});
+
+
 // Whenever a page in a tab is done loading, check whether the page
 // requires any source file monitoring.
 browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
-    if (tab.status === 'complete') {
-        disableAllMonitoring(tab.id);
+    if (addonEnabled && tab.status === 'complete') {
+        disableTabMonitoring(tab.id);
         rules.forEach((rule) => {
             // Host matches pattern, start monitoring.
             if (tab.url.match(rule.hostRegExp)) {
@@ -36,14 +41,23 @@ browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
 });
 
 browser.tabs.onRemoved.addListener((tabId) => {
-    disableAllMonitoring(tabId);
+    disableTabMonitoring(tabId);
 });
 
 
 // Pick up on messages.
 chrome.runtime.onMessage.addListener((message, sender) => {
     switch (message.type) {
-        case 'updatedReloadRules':
+        case 'requestAddonEnabled':
+            chrome.runtime.sendMessage({type: 'addonEnabled', addonEnabled});
+            break;
+        case 'addonEnabledChanged':
+            addonEnabled = message.addonEnabled;
+            if (!addonEnabled) {
+                disableAllMonitoring();
+            }
+            break;
+        case 'reloadRulesChanged':
             updateReloadRules(message.rules);
             break;
         case 'pageSourceFiles':
@@ -82,9 +96,9 @@ function updateReloadRules(updateRules) {
     }
     // Prepare regexps
     rules.forEach((rule) => {
-        rule.hostRegExp = matchPatternAsRegExp(rule.host);
+        rule.hostRegExp = getRegExpForMatchPattern(rule.host);
         rule.sourceRegExps = rule.sources.map((source) => {
-            return matchPatternAsRegExp(source);
+            return getRegExpForMatchPattern(source);
         });
     });
 }
@@ -105,13 +119,20 @@ function checkSourceFileMatches(source, rule, tab) {
 
 // We record the last tab accessed to populate the add reload rule form.
 function recordTab(tab) {
-    if (!tab.incognito && tab.url.match(ALL_URLS)) {
+    if (!tab.incognito && tab.url.match(allUrlsRegExp)) {
         Object.assign(tabData, tab);
     }
 }
 
 
-function disableAllMonitoring(tabId) {
+function disableAllMonitoring() {
+    Object.keys(registry).forEach((tabId) => {
+        disableTabMonitoring(tabId);
+    });
+}
+
+
+function disableTabMonitoring(tabId) {
     Object.values(registry[tabId] || {}).forEach((fileRegistry) => {
         clearTimeout(fileRegistry.timer);
     });
@@ -163,14 +184,14 @@ async function getFileHash(url) {
 async function sha1(str) {
     const encodedText = new TextEncoder('utf-8').encode(str);
     const sha1Buffer = await crypto.subtle.digest('SHA-1', encodedText);
-    const segments = '';
     const padZeroes = '00000000';
     const dataView = new DataView(sha1Buffer);
+    let sha1 = '';
     for (let i = 0; i < dataView.byteLength; i += 4) {
         const hexString = dataView.getUint32(i).toString(16);
-        segments += (padZeroes + hexString).slice(-padZeroes.length);
+        sha1 += (padZeroes + hexString).slice(-padZeroes.length);
     }
-    return segments;
+    return sha1;
 }
 
 function inject(rule) {
@@ -183,48 +204,4 @@ function inject(rule) {
         scripts: Array.from(scriptElements).map((el) => el.src),
         styles: Array.from(styleElements).map((el) => el.href),
     });
-}
-
-
-/**
- * https://developer.mozilla.org/en-US/Add-ons/WebExtensions/Match_patterns
- * #Converting_Match_Patterns_to_Regular_Expressions
- */
-function matchPatternAsRegExp(pattern) {
-    if (pattern === '<all_urls>') {
-        return ALL_URLS;
-    }
-
-    const match = MATCH_PATTERN.exec(pattern);
-
-    if (match === null) {
-        console.error(`Invalid match pattern: ${pattern}`);
-        return (/^$/);
-    }
-
-    let [, scheme, host, path] = match;
-
-    if (scheme === '*') {
-        scheme = 'https?';
-    } else {
-        scheme = escape(scheme);
-    }
-
-    if (host === '*') {
-        host = '[^\\/]*';
-    } else {
-        host = escape(host)
-            .replace('%3A', ':')
-            .replace(/^\*\./g, '(?:[^\\/]+)?');
-    }
-
-    if (path === '*') {
-        path = '(?:\\/.*)?';
-    } else if (path) {
-        path = `\\/${escape(path).replace(/\*/g, '.*')}`;
-    } else {
-        path = '\\/?';
-    }
-
-    return new RegExp(`^(?:${scheme}://${host}${path})$`);
 }

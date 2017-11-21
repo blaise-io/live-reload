@@ -2,26 +2,31 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <link rel="stylesheet" href="popup.css">
+    <link rel="stylesheet" href="/popup/popup.css">
 </head>
 <body>
     <section>
-        <ul>
-            <li id="toggle">
-                <!-- TODO: Enable/disable plugin -->
-                <strong><span class="icon">•</span> Live Reload is active</strong>
+        <ul id="popup-menu">
+            <li class="toggle enabled">
+                <span class="icon">✔</span>
+                Live Reload is active
+            </li>
+            <li class="toggle disabled hidden">
+                <span class="icon">✘</span>
+                Live Reload is disabled
             </li>
             <li data-pop="options/add.html">
-                <span class="icon">+</span> Create a new reload rule
+                <span class="icon">+</span>
+                Create a new reload rule
             </li>
-            <!--
-            LIST OF RULES
-            <li class="rule">
-                <div><span class="icon">•</span> My first reload rule</div>
-            </li>
-            -->
+            <template id="reload-rule">
+                <li class="rule">
+                    <span class="icon">&nbsp;</span>
+                    <span class="title"></span>
+                </li>
+            </template>
         </ul>
     </section>
-    <script src="popup.js"></script>
+    <script src="/popup/popup.js"></script>
 </body>
 </html>

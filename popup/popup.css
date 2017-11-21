@@ -2,6 +2,10 @@ body {
     font-size: 14px;
 }
 
+.hidden {
+    display: none;
+}
+
 ul,
 li {
     list-style: none;
@@ -15,8 +19,22 @@ li {
     ul li.rule {
         background: #fff;
     }
-        ul li strong .icon {
-            transform: scale(1.2);
+        ul li .icon {
+            display: inline-block;
+            width: 1em;
+        }
+        .disabled .icon {
+            color: red;
+        }
+        .enabled .icon {
+            color: green;
+        }
+        ul li.rule span.title {
+            width: 300px;
+            display: inline-block;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
         }
     ul li:hover {
         background: rgba(0, 0, 0, 0.08) !important;

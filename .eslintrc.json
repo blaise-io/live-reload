@@ -28,6 +28,9 @@
   },
   "globals": {
     "browser": false,
-    "chrome": false
+    "chrome": false,
+    "getRegExpForMatchPattern": false,
+    "matchPatternRegExp": false,
+    "allUrlsRegExp": false
   }
 }
