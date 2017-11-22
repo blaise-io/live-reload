@@ -6,23 +6,28 @@ body {
     display: none;
 }
 
+ul {
+    padding: 7px 0 0;
+    border-bottom: 7px solid white;
+}
+
 ul,
 li {
     list-style: none;
     margin: 0;
-    padding: 0;
 }
     ul li {
-        /*border-bottom: 1px solid #ccc;*/
         padding: 0 8px;
-        line-height: 28px;
+        line-height: 26px;
         white-space: nowrap;
         text-overflow: ellipsis;
         overflow: hidden;
         max-width: 100%;
     }
-    ul li.create-rule {
-        border-bottom: 1px solid #ddd;
+    template + li.rule {
+        margin-top: 14px;
+        box-shadow: 0 -5px 0 #fff,
+                    0 -6px 0 #ddd;
     }
     ul li.rule {
         background: #fff;
@@ -30,6 +35,14 @@ li {
         ul li .icon {
             display: inline-block;
             width: 1em;
+        }
+        ul li img {
+            width: 16px;
+            height: 16px;
+            vertical-align: baseline;
+            position: relative;
+            top: 3px;
+            margin-right: 2px;
         }
         .disabled .icon {
             color: red;
