@@ -2,16 +2,18 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Create a new reload rule</title>
+    <title>Loading…</title>
     <link rel="stylesheet" href="chrome://browser/content/extension.css">
     <link rel="stylesheet" href="chrome://browser/content/extension-mac.css">
-    <link rel="stylesheet" href="../popup/popup.css">
+    <link rel="stylesheet" href="/form/form.css">
 </head>
 <body>
     <form>
-        <h2 class="form-row">
-            Create a new reload rule
-        </h2>
+        <h2 class="form-row update">Loading…</h2>
+        <h2 class="form-row create hidden">Create a new reload rule</h2>
+        <input type="hidden" name="id">
+        <input type="hidden" name="created">
+        <input type="hidden" name="modified">
         <div class="form-row help">
             When a tab's URL matches the host’s
             <a href="https://developer.mozilla.org/en-US/Add-ons/WebExtensions/Match_patterns" class="code" target="_blank">match pattern</a>,
@@ -61,11 +63,12 @@
                       class="code browser-style"></textarea>
         </div>
         <div class="form-row form-submit browser-style">
-            <!-- TODO: Split into create and add -->
-            <button type="submit" class="browser-style">Create reload rule</button>
+            <button type="submit" class="browser-style create">Create reload rule</button>
+            <button type="submit" class="browser-style update hidden">Save reload rule</button>
         </div>
     </form>
-    <script src="/match-pattern.js"></script>
-    <script src="/options/add.js"></script>
+    <script src="/shared/match-pattern.js"></script>
+    <script src="/shared/rules.js"></script>
+    <script src="/form/form.js"></script>
 </body>
 </html>

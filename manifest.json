@@ -5,8 +5,9 @@
   "description": "Reload a browser tab when source files are updated.",
   "background": {
     "scripts": [
-      "match-pattern.js",
-      "background.js"
+      "/shared/rules.js",
+      "/shared/match-pattern.js",
+      "/background/background.js"
     ]
   },
   "browser_action": {

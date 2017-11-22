@@ -9,10 +9,10 @@ browser tab gets refreshed.
 Currently only scripts and stylesheets are supported for monitoring.
 
 
-## To do for MVP
+## To do
 
- - Toolbar button
- - Click button -> open configuration dialog
- - Allow global enable/disable
- - Allow modifying reload rules and monitored files
+ - Delete rule
  - Indication which files are being monitored
+ - Indication why a page got refreshed
+ - Create reload-in-place option that allows reloading only the
+   changed source file instead of entire page

@@ -5,20 +5,19 @@ const template = document.querySelector('template#reload-rule');
 const enabledElement = document.querySelector('.enabled');
 const disabledElement = document.querySelector('.disabled');
 
+
 // Fetch reload rules from storage.
-browser.storage.sync.get('rules').then((result) => {
-    updateReloadRules(result.rules);
-}).catch((error) => {
-    console.error('Error retrieving rules:', error);
-});
+getListRules().then(setReloadRules);
 
 
 // Fetch Addon active from background.js.
 chrome.runtime.sendMessage({type: 'requestAddonEnabled'});
 chrome.runtime.onMessage.addListener((message) => {
-    if (message.type === 'addonEnabled') {
-        addonEnabled = message.addonEnabled !== false;
-        updatePopupUI();
+    switch (message.type) {
+        case 'addonEnabled':
+            addonEnabled = message.addonEnabled;
+            updatePopupUI();
+            break;
     }
 });
 
@@ -35,27 +34,31 @@ document.querySelectorAll('.toggle').forEach((toggle) => {
 
 
 // Popup handler.
-document.querySelectorAll('[data-pop]').forEach((el) => {
-    el.addEventListener('click', (event) => {
-        window.open(browser.extension.getURL(el.getAttribute('data-pop')),
+document.body.addEventListener('click', (event) => {
+    const element = event.target.closest('li');
+    if (element) {
+        window.open(browser.extension.getURL(element.getAttribute('data-pop')),
             'live-reload',
             `width=400,height=600,
             left=${Math.max(20, screen.width - 420)},
             top=${event.screenY + 20}`
         );
-    });
+    }
 });
 
 
 function updatePopupUI() {
-    enabledElement.classList.toggle('hidden', addonEnabled);
-    disabledElement.classList.toggle('hidden', !addonEnabled);
+    enabledElement.classList.toggle('hidden', !addonEnabled);
+    disabledElement.classList.toggle('hidden', addonEnabled);
 }
 
 
-function updateReloadRules(rules) {
+function setReloadRules(rules) {
     rules.forEach((rule) => {
         template.content.querySelector('.title').textContent = rule.title;
+        template.content.querySelector('li').setAttribute(
+            'data-pop', `form/form.html?rule=${rule.id}`
+        );
         document.querySelector('ul#popup-menu').appendChild(
             document.importNode(template.content, true)
         );

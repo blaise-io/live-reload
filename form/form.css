@@ -1,0 +1,95 @@
+body {
+    font-size: 14px;
+}
+body.update .create,
+body.create .update {
+    display: none;
+}
+body.update .update,
+body.create .create {
+    display: block;
+}
+
+.form-row-header {
+    font-weight: bold;
+}
+h2.form-row {
+    border-bottom: none;
+    background: #333;
+    color: #fff;
+    font-size: 1.2em;
+    font-weight: 100;
+}
+.form-row {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 8px 15px;
+    font-size: 14px;
+    font-family: inherit;
+    margin: 0;
+}
+.form-row.help {
+    background: #eef;
+    color: #468;
+    font-size: 0.9em;
+}
+    .form-row label {
+        display: block;
+        font-size: inherit;
+    }
+        .form-row label small {
+            opacity: 0.6;
+            font-size: 0.8em;
+            margin-left: 5px;
+        }
+    .form-row input[type=text],
+    .form-row input[type=number],
+    .form-row textarea {
+        display: block;
+        width: 100%;
+        border: 1px solid #ccc;
+        color: #000;
+        background: #fff;
+        padding: 0 5px;
+        line-height: 30px;
+        height: 30px;
+        margin: 9px 0 2px;
+        font-size: 12px;
+        text-overflow: ellipsis ellipsis;
+    }
+    .form-row input[type=number] {
+        width: 5em;
+        display: inline-block;
+        margin-right: 5px;
+    }
+    .form-row textarea {
+        height: 100px;
+        line-height: inherit;
+        resize: vertical;
+        white-space: pre;
+    }
+    .form-row .help {
+        opacity: 0.7;
+        font-size: 0.85em;
+        margin: 2px 0 0;
+    }
+    .form-row .code {
+        font-size: 0.9em;
+    }
+    a {
+        color: inherit;
+        text-decoration: underline;
+    }
+
+.code {
+    font-family: droid sans mono, consolas, monaco, monospace !important;
+}
+
+.form-submit {
+    border-bottom: none;
+}
+    .form-submit button {
+        width: 100%;
+        text-align: center;
+        height: 30px;
+        line-height: 30px;
+    }

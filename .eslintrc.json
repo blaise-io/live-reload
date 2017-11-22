@@ -31,6 +31,10 @@
     "chrome": false,
     "getRegExpForMatchPattern": false,
     "matchPatternRegExp": false,
-    "allUrlsRegExp": false
+    "allUrlsRegExp": false,
+    "getListRules": false,
+    "getRuleById": false,
+    "createRule": false,
+    "updateRule": false
   }
 }
