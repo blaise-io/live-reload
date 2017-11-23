@@ -1,12 +1,12 @@
 /* exported getListRules, getRuleById, createRule, updateRule */
 
+const storage = browser.storage.sync;
 
 async function getListRules() {
-    // Fetch reload rules from storage.
     try {
-        const result = await browser.storage.sync.get('rules');
+        const result = await storage.get('rules');
         if (result.rules instanceof Array) {
-            return result.rules;
+            return result.rules.filter((rule) => rule instanceof Object);
         }
     } catch (error) {
         console.error(error);
@@ -55,7 +55,7 @@ async function saveAllRules(rules) {
         }
     });
     try {
-        await browser.storage.sync.set({rules});
+        await storage.set({rules});
         return rules;
     } catch (error) {
         console.error('Error saving:', error);
