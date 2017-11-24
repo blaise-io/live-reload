@@ -31,10 +31,11 @@ li {
     }
     ul li.rule {
         background: #fff;
+        position: relative;
     }
         ul li .icon {
             display: inline-block;
-            width: 1em;
+            width: 18px;
         }
         ul li img {
             width: 16px;
@@ -44,6 +45,20 @@ li {
             top: 3px;
             margin-right: 2px;
         }
+        ul li img.delete {
+            background: #fff;
+            width: 12px;
+            height: 12px;
+            position: absolute;
+            margin: 0;
+            right: 0;
+            top: 0;
+            padding: 7px 10px;
+            border-left: 1px solid #eee;
+            box-sizing: content-box;
+            box-shadow: -10px 0 0 #fff;
+        }
+
         .disabled .icon {
             color: red;
         }

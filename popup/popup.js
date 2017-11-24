@@ -33,8 +33,18 @@ document.querySelectorAll('.toggle').forEach((toggle) => {
 });
 
 
-// Popup handler.
+// Click handler.
 document.body.addEventListener('click', (event) => {
+    if (event.target.classList.contains('delete')) {
+        event.stopPropagation();
+        console.log(event.target);
+        const title = event.target.parentNode.textContent.trim();
+        if (confirm(`Are you sure you want to delete this rule?\n\n${title}`)) {
+            alert('DELETE'); // TODO
+        }
+        return;
+    }
+
     const element = event.target.closest('li');
     if (element) {
         window.open(browser.extension.getURL(element.getAttribute('data-pop')),

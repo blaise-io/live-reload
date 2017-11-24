@@ -1,6 +1,6 @@
 /* exported getListRules, getRuleById, createRule, updateRule */
 
-const storage = browser.storage.sync;
+const storage = browser.storage.local;
 
 async function getListRules() {
     try {

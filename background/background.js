@@ -13,7 +13,7 @@ getListRules().then(updateReloadRules);
 
 // Fetch active state.
 browser.storage.local.get('addonEnabled').then((result) => {
-    addonEnabled = result.addonEnabled !== false;
+    toggleAddonEnabled(result.addonEnabled !== false)
 });
 
 
@@ -41,12 +41,7 @@ chrome.runtime.onMessage.addListener((message, sender) => {
             chrome.runtime.sendMessage({type: 'addonEnabled', addonEnabled});
             break;
         case 'addonEnabledChanged':
-            addonEnabled = message.addonEnabled;
-            if (!addonEnabled) {
-                disableAllMonitoring();
-            } else {
-                continueMonitoring();
-            }
+            toggleAddonEnabled(message.addonEnabled);
             break;
         case 'reloadRulesChanged':
             updateReloadRules(message.rules);
@@ -79,6 +74,24 @@ browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
 browser.tabs.onActivated.addListener((activeTab) => {
     browser.tabs.get(activeTab.tabId).then(recordTab);
 });
+
+
+// Toggle icon and title when monitoring is enable/disabled.
+function toggleAddonEnabled(enabled) {
+    addonEnabled = enabled;
+    let action = {};
+    if (enabled) {
+        continueMonitoring();
+        action.icon = "/icons/icon.svg";
+        action.title = "Live Reload";
+    } else {
+        disableAllMonitoring();
+        action.icon = "icons/icon-disabled.svg";
+        action.title = "Live Reload (disabled)";
+    }
+    browser.browserAction.setIcon({path: action.icon});
+    browser.browserAction.setTitle({title: action.title});
+}
 
 
 function monitorTabIfEligible(tab) {
