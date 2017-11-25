@@ -35,20 +35,42 @@ document.querySelectorAll('.toggle').forEach((toggle) => {
 
 // Click handler.
 document.body.addEventListener('click', (event) => {
+
+    // Delete.
     const deleteTrigger = event.target.closest('.option-delete');
     if (deleteTrigger) {
-        // TODO: Create data-pop
         const container = event.target.closest('.split');
-        const title = container.querySelector('.text').textContent;
-        const id = container.querySelector('[data-rule-id]').getAttribute('data-rule-id');
-        const sure = confirm(`Are you sure you want to delete “${title}”?`);
-        if (id && sure) {
-            deleteRule(id).then(() => {
-                container.parentNode.removeChild(container);
-            });
-        }
+        container.classList.toggle('hidden');
+        container.nextElementSibling.classList.toggle('hidden');
+        event.stopPropagation();
+        return;
     }
 
+    // Confirm delete.
+    const confirmDeleteTrigger = event.target.closest('.option-delete-confirm');
+    if (confirmDeleteTrigger) {
+        const id = confirmDeleteTrigger.getAttribute('data-rule-id');
+        deleteRule(id).then((rules) => {
+            const container = event.target.closest('.split');
+            container.parentNode.removeChild(container.previousElementSibling);
+            container.parentNode.removeChild(container);
+            updateNoRules(rules);
+        });
+        event.stopPropagation();
+        return;
+    }
+
+    // Cancel Delete.
+    const cancelDeleteTrigger = event.target.closest('.option-delete-cancel');
+    if (cancelDeleteTrigger) {
+        const container = event.target.closest('.split');
+        container.previousElementSibling.classList.toggle('hidden');
+        container.classList.toggle('hidden');
+        event.stopPropagation();
+        return;
+    }
+
+    // Popup.
     const popAttr = event.target.closest('[data-pop]');
     if (popAttr) {
         window.open(browser.extension.getURL(popAttr.getAttribute('data-pop')),
@@ -70,13 +92,21 @@ function updatePopupUI() {
 
 
 function setReloadRules(rules) {
+    updateNoRules(rules);
     rules.forEach((rule) => {
         const panel = template.content.querySelector('.panel-list-item.rule');
+        const dataRuleEl = template.content.querySelector('[data-rule-id]');
         panel.querySelector('.text').textContent = rule.title;
-        panel.setAttribute('data-rule-id', rule.id);
         panel.setAttribute('data-pop', `form/form.html?rule=${rule.id}`);
+        dataRuleEl.setAttribute('data-rule-id', rule.id);
         document.querySelector('#rules-list').appendChild(
             document.importNode(template.content, true)
         );
     });
+}
+
+
+function updateNoRules(rules) {
+    const noRules = document.getElementById('no-rules');
+    noRules.classList.toggle('hidden', rules.length >= 1);
 }

@@ -3,7 +3,7 @@ body {
 }
 
 .hidden {
-    display: none;
+    display: none !important;
 }
 
 .panel-list-item:hover {
@@ -32,26 +32,33 @@ body {
         transform: scale(0.8);
     }
 
+#no-rules {
+    padding-top: 3px !important;
+    padding-bottom: 15px !important;
+    font-style: italic;
+}
+
 .split {
     display: flex;
     flex-direction: row;
 }
-    .split .panel-list-item {
+    .split .panel-list-item.rule {
         width: 100%;
         overflow: hidden;
-        padding-right: 4px;
     }
     .split .options {
         border-left: 1px solid rgba(0, 0, 0, 0.2) !important;
-        margin-left: 6px;
         padding: 0 6px;
         background-clip: content-box;
         overflow: hidden;
         text-align: center;
-        width: 40px;
-        display: none;
+        flex: 0 0 auto;
     }
-    .split:hover .options {
+    .split .option-delete {
+        display: none;
+        margin-left: 6px;
+    }
+    .split:hover .option-delete {
         display: block;
     }
     .split .options img {
@@ -59,7 +66,10 @@ body {
         box-sizing: content-box;
         width: 14px;
         height: 14px;
-        padding: 5px;
+        padding: 6px;
+    }
+    .split .options .text {
+        padding: 0 6px;
     }
 
 .panel-section-footer-button {

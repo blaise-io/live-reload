@@ -1,4 +1,4 @@
-/* exported getListRules, getRuleById, createRule, updateRule */
+/* exported getListRules, getRuleById, createRule, deleteRule, updateRule */
 
 const storage = browser.storage.local;
 
@@ -35,6 +35,18 @@ async function createRule(rule) {
 }
 
 
+async function deleteRule(deleteId) {
+    const rules = await getListRules();
+    const index = rules.findIndex((rule) => rule.id === deleteId);
+    if (index === -1) {
+        // Already deleted?
+        console.error(`Not found: ${deleteId}`, rules);
+    }
+    rules.splice(index, 1);
+    return await saveAllRules(rules);
+}
+
+
 async function updateRule(updateId, rule) {
     const rules = await getListRules();
     const index = rules.findIndex((rule) => rule.id === updateId);
@@ -43,18 +55,6 @@ async function updateRule(updateId, rule) {
         throw new Error(`Cannot find rule with id ${rule.id} to update`);
     }
     rules[index] = rule;
-    return await saveAllRules(rules);
-}
-
-
-async function deleteRule(deleteId) {
-    const rules = await getListRules();
-    const index = rules.findIndex((rule) => rule.id === deleteId);
-    if (index === -1) {
-        // Already deleted?
-        console.error(`Not found: ${rule.id}`, rules);
-    }
-    rules.splice(index, 1);
     return await saveAllRules(rules);
 }
 

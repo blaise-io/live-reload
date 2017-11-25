@@ -13,7 +13,7 @@ getListRules().then(updateReloadRules);
 
 // Fetch active state.
 browser.storage.local.get('addonEnabled').then((result) => {
-    toggleAddonEnabled(result.addonEnabled !== false)
+    toggleAddonEnabled(result.addonEnabled !== false);
 });
 
 
@@ -47,13 +47,11 @@ chrome.runtime.onMessage.addListener((message, sender) => {
             updateReloadRules(message.rules);
             break;
         case 'pageSourceFiles':
-            // Retrieve rule again.
-            const rule = rules.find((rule) => rule.id === message.rule);
-            if (rule) {
-                checkSourceFileMatches(
-                    message.scripts.concat(message.styles), rule, sender.tab
-                );
-            }
+            pageSourceFilesReceived(
+                message.scripts.concat(message.styles),
+                message.rule,
+                sender.tab
+            );
             break;
         case 'requestTabData':
             chrome.runtime.sendMessage({type: 'tabData', tabData});
@@ -82,12 +80,12 @@ function toggleAddonEnabled(enabled) {
     let action = {};
     if (enabled) {
         continueMonitoring();
-        action.icon = "/icons/icon.svg";
-        action.title = "Live Reload";
+        action.icon = '/icons/icon.svg';
+        action.title = 'Live Reload';
     } else {
         disableAllMonitoring();
-        action.icon = "icons/icon-disabled.svg";
-        action.title = "Live Reload (disabled)";
+        action.icon = 'icons/icon-disabled.svg';
+        action.title = 'Live Reload (disabled)';
     }
     browser.browserAction.setIcon({path: action.icon});
     browser.browserAction.setTitle({title: action.title});
@@ -136,6 +134,14 @@ function updateReloadRules(updateRules) {
     // Restart.
     disableAllMonitoring();
     continueMonitoring();
+}
+
+
+function pageSourceFilesReceived(files, ruleId, tab) {
+    const rule = rules.find((rule) => rule.id === ruleId);
+    if (rule) {
+        checkSourceFileMatches(files, rule, tab);
+    }
 }
 
 
