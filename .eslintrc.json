@@ -35,6 +35,7 @@
     "getListRules": false,
     "getRuleById": false,
     "createRule": false,
+    "deleteRule": false,
     "updateRule": false
   }
 }

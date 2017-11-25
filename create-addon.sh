@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-zip -r media-carousel.xpi * -x "*/.*" "*.xpi" "*.sh" "*.md"
+zip -r live-reload.xpi * -x "*/.*" "*.xpi" "*.sh" "*.md"
