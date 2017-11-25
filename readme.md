@@ -9,16 +9,10 @@ browser tab gets refreshed.
 Currently only scripts and stylesheets are supported for monitoring.
 
 
-## MVP
-
- - Active / Disabled icon
- - Delete rule button
-
-
-## Later
+## Features under consideration
 
  - Indication which files are being monitored
  - Indication why a page got refreshed
  - Create reload-in-place option that allows reloading only the
    changed source file instead of entire page
- - Option to sync across devices
+ - Option to sync rules across devices
