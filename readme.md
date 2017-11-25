@@ -2,6 +2,8 @@
 
 **Firefox addon for web developers. Reload a browser tab when source files are updated.**
 
+[Download the Firefox addon here](https://addons.mozilla.org/en-US/firefox/addon/live-reload/)
+
 This addon allows web developers to configure included source files to
 monitor on a page. Whenever one of the monitored files is changed, the
 browser tab gets refreshed.
