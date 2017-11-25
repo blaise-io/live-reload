@@ -1,0 +1,38 @@
+<!doctype html>
+<!--
+
+How to test?
+
+```
+cd live-reload/test
+sudo python -m SimpleHTTPServer 8000
+```
+
+Then create a reload rule using this addon's UI with settings:
+
+Host match pattern:
+http://localhost:8000/test.html
+
+Source file match patterns:
+http://localhost:8000/test.js
+
+Verify:
+ - Whether test.js is requested every <interval> seconds in your shell where
+   you ran the Python command.
+ - Whether the tab gets refreshed every time you change test.js
+
+-->
+<html>
+<head>
+    <meta charset="utf-8">
+    <script src="./test.js"></script>
+    <title>Test</title>
+</head>
+<body>
+    <pre></pre>
+    <script>
+        document.title = `Test (update ${new Date() % 10000})`;
+        document.querySelector('pre').innerText = new Date().toString();
+    </script>
+</body>
+</html>
