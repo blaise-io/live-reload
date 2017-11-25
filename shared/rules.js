@@ -47,6 +47,18 @@ async function updateRule(updateId, rule) {
 }
 
 
+async function deleteRule(deleteId) {
+    const rules = await getListRules();
+    const index = rules.findIndex((rule) => rule.id === deleteId);
+    if (index === -1) {
+        // Already deleted?
+        console.error(`Not found: ${rule.id}`, rules);
+    }
+    rules.splice(index, 1);
+    return await saveAllRules(rules);
+}
+
+
 async function saveAllRules(rules) {
     rules.forEach((rule) => {
         if (!rule || typeof rule !== 'object') {

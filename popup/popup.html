@@ -5,30 +5,36 @@
     <link rel="stylesheet" href="/popup/popup.css">
 </head>
 <body>
-    <section>
-        <ul id="popup-menu">
-            <li class="toggle enabled">
-                <span class="icon">✔</span>
-                Live Reload is active
-            </li>
-            <li class="toggle disabled hidden">
-                <span class="icon">✘</span>
-                Live Reload is disabled
-            </li>
-            <li class="create-rule" data-pop="/form/form.html">
-                <span class="icon">+</span>
-                Create a new reload rule…
-            </li>
-            <template id="reload-rule">
-                <li class="rule">
-                    <img src="/icons/script.svg">
-                    <span class="title"></span>
-                    <img src="/icons/delete.svg" class="delete">
-                </li>
-            </template>
-        </ul>
-    </section>
-    <script src="/shared/rules.js"></script>
-    <script src="/popup/popup.js"></script>
+<template id="reload-rule">
+    <div class="split">
+        <div class="panel-list-item rule" data-pop data-rule-id>
+            <img src="/icons/script.svg" class="icon">
+            <div class="text"></div>
+        </div>
+        <div class="panel-list-item options option-delete">
+            <img src="/icons/delete.svg">
+        </div>
+    </div>
+</template>
+<div class="panel">
+    <div id="rules-list" class="panel-section-list">
+        <div class="panel-list-item toggle addon-enabled">
+            <img src="chrome://browser/skin/check.svg" class="icon">
+            <div class="text">Live reload is active</div>
+        </div>
+        <div class="panel-list-item toggle addon-disabled hidden">
+            <img src="chrome://browser/skin/stop.svg" class="icon">
+            <div class="text">Live reload is disabled</div>
+        </div>
+        <div class="panel-section-separator"></div>
+    </div>
+    <div class="panel-section-footer">
+        <div class="panel-section-footer-button" data-pop="/form/form.html">
+            Create a new reload rule…
+        </div>
+    </div>
+</div>
+<script src="/shared/rules.js"></script>
+<script src="/popup/popup.js"></script>
 </body>
 </html>

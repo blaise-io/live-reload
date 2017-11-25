@@ -6,68 +6,63 @@ body {
     display: none;
 }
 
-ul {
-    padding: 7px 0 0;
-    border-bottom: 7px solid white;
+.panel-list-item:hover {
+    border: none !important;
 }
 
-ul,
-li {
-    list-style: none;
-    margin: 0;
+.panel-section-list {
+    padding: 6px 0;
 }
-    ul li {
-        padding: 0 8px;
-        line-height: 26px;
+    .panel-list-item .text {
         white-space: nowrap;
-        text-overflow: ellipsis;
         overflow: hidden;
-        max-width: 100%;
+        text-overflow: ellipsis;
     }
-    template + li.rule {
-        margin-top: 14px;
-        box-shadow: 0 -5px 0 #fff,
-                    0 -6px 0 #ddd;
+    .panel-list-item img.icon {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        vertical-align: middle;
+        margin: 0 6px 0 0;
     }
-    ul li.rule {
-        background: #fff;
-        position: relative;
+    .panel-list-item.toggle .text {
+        font-weight: bold;
     }
-        ul li .icon {
-            display: inline-block;
-            width: 18px;
-        }
-        ul li img {
-            width: 16px;
-            height: 16px;
-            vertical-align: baseline;
-            position: relative;
-            top: 3px;
-            margin-right: 2px;
-        }
-        ul li img.delete {
-            background: #fff;
-            width: 12px;
-            height: 12px;
-            position: absolute;
-            margin: 0;
-            right: 0;
-            top: 0;
-            padding: 7px 10px;
-            border-left: 1px solid #eee;
-            box-sizing: content-box;
-            box-shadow: -10px 0 0 #fff;
-        }
+    .panel-list-item.toggle img.icon {
+        transform: scale(0.8);
+    }
 
-        .disabled .icon {
-            color: red;
-        }
-        .enabled .icon {
-            color: green;
-        }
-        ul li.rule span.title {
-        }
-    ul li:hover,
-    ul li:hover .icon {
-        background: #eee !important;
+.split {
+    display: flex;
+    flex-direction: row;
+}
+    .split .panel-list-item {
+        width: 100%;
+        overflow: hidden;
+        padding-right: 4px;
     }
+    .split .options {
+        border-left: 1px solid rgba(0, 0, 0, 0.2) !important;
+        margin-left: 6px;
+        padding: 0 6px;
+        background-clip: content-box;
+        overflow: hidden;
+        text-align: center;
+        width: 40px;
+        display: none;
+    }
+    .split:hover .options {
+        display: block;
+    }
+    .split .options img {
+        vertical-align: middle;
+        box-sizing: content-box;
+        width: 14px;
+        height: 14px;
+        padding: 5px;
+    }
+
+.panel-section-footer-button {
+    text-align: left;
+    padding-left: 16px;
+}

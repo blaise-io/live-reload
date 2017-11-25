@@ -2,8 +2,8 @@
 let addonEnabled = true;
 
 const template = document.querySelector('template#reload-rule');
-const enabledElement = document.querySelector('.enabled');
-const disabledElement = document.querySelector('.disabled');
+const enabledElement = document.querySelector('.addon-enabled');
+const disabledElement = document.querySelector('.addon-disabled');
 
 
 // Fetch reload rules from storage.
@@ -35,24 +35,30 @@ document.querySelectorAll('.toggle').forEach((toggle) => {
 
 // Click handler.
 document.body.addEventListener('click', (event) => {
-    if (event.target.classList.contains('delete')) {
-        event.stopPropagation();
-        console.log(event.target);
-        const title = event.target.parentNode.textContent.trim();
-        if (confirm(`Are you sure you want to delete this rule?\n\n${title}`)) {
-            alert('DELETE'); // TODO
+    const deleteTrigger = event.target.closest('.option-delete');
+    if (deleteTrigger) {
+        // TODO: Create data-pop
+        const container = event.target.closest('.split');
+        const title = container.querySelector('.text').textContent;
+        const id = container.querySelector('[data-rule-id]').getAttribute('data-rule-id');
+        const sure = confirm(`Are you sure you want to delete “${title}”?`);
+        if (id && sure) {
+            deleteRule(id).then(() => {
+                container.parentNode.removeChild(container);
+            });
         }
-        return;
     }
 
-    const element = event.target.closest('li');
-    if (element) {
-        window.open(browser.extension.getURL(element.getAttribute('data-pop')),
+    const popAttr = event.target.closest('[data-pop]');
+    if (popAttr) {
+        window.open(browser.extension.getURL(popAttr.getAttribute('data-pop')),
             'live-reload',
             `width=400,height=600,
             left=${Math.max(20, screen.width - 420)},
             top=${event.screenY + 20}`
         );
+        event.stopPropagation();
+        return;
     }
 });
 
@@ -65,11 +71,11 @@ function updatePopupUI() {
 
 function setReloadRules(rules) {
     rules.forEach((rule) => {
-        template.content.querySelector('.title').textContent = rule.title;
-        template.content.querySelector('li').setAttribute(
-            'data-pop', `form/form.html?rule=${rule.id}`
-        );
-        document.querySelector('ul#popup-menu').appendChild(
+        const panel = template.content.querySelector('.panel-list-item.rule');
+        panel.querySelector('.text').textContent = rule.title;
+        panel.setAttribute('data-rule-id', rule.id);
+        panel.setAttribute('data-pop', `form/form.html?rule=${rule.id}`);
+        document.querySelector('#rules-list').appendChild(
             document.importNode(template.content, true)
         );
     });
