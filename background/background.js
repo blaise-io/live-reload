@@ -175,6 +175,7 @@ function disableAllMonitoring() {
 function disableTabMonitoring(tabId) {
     Object.values(registry[tabId] || {}).forEach((fileRegistry) => {
         clearTimeout(fileRegistry.timer);
+        delete(registry[tabId]);
     });
 }
 
