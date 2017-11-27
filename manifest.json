@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Live Reload",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Reload a browser tab when source files are updated.",
   "background": {
     "scripts": [
