@@ -27,11 +27,6 @@ h2.form-row {
     font-family: inherit;
     margin: 0;
 }
-.form-row.help {
-    background: #eef;
-    color: #468;
-    font-size: 0.9em;
-}
     .form-row label {
         display: block;
         font-size: inherit;
@@ -79,6 +74,14 @@ h2.form-row {
         color: inherit;
         text-decoration: underline;
     }
+
+
+.form-row.help {
+    color: #59d;
+    font-size: 0.8em;
+    border-bottom: none;
+    padding-bottom: 4px;
+}
 
 .code {
     font-family: droid sans mono, consolas, monaco, monospace !important;

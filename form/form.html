@@ -14,12 +14,6 @@
         <input type="hidden" name="id">
         <input type="hidden" name="created">
         <input type="hidden" name="modified">
-        <div class="form-row help">
-            When a tab's URL matches the host’s
-            <a href="https://developer.mozilla.org/en-US/Add-ons/WebExtensions/Match_patterns" class="code" target="_blank">match pattern</a>,
-            all scripts and styles included on that page are matched against all source file match patterns.
-            Any matching source file will be monitored for changes.
-        </div>
         <div class="form-row browser-style">
             <label for="title">Title</label>
             <input autofocus
@@ -29,6 +23,13 @@
                    type="text"
                    maxlength="64"
                    placeholder="This title will be visible in the overview">
+        </div>
+        <div class="form-row help">
+            When a tab URL matches the pattern entered in the <strong>Host match pattern</strong> field,
+            this addon will start monitoring all script and style includes on that page.
+            <a href="https://developer.mozilla.org/en-US/Add-ons/WebExtensions/Match_patterns" target="_blank">
+                <strong>How do I write a match pattern?</strong>
+            </a>
         </div>
         <div class="form-row browser-style">
             <label for="host">Host match pattern</label>
@@ -49,13 +50,12 @@
                    step="0.5"
                    value="2"> seconds
         </div>
+        <div class="form-row help">
+            Filter which source files on the host page are monitored using the <strong>Source file match patterns</strong> field below.
+            Include a host in the match pattern. Separate match patterns with one or more line breaks.
+        </div>
         <div class="form-row browser-style">
             <label for="sources">Source file match patterns</label>
-            <div class="help">
-                Separate multiple rules with one or more line breaks.
-                Each matching file on the host page will be polled separately.
-                To prevent unnecessary polling, avoid broad patterns.
-            </div>
             <textarea required
                       name="sources"
                       id="sources"
