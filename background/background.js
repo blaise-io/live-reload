@@ -150,7 +150,7 @@ function checkSourceFileMatches(files, rule, tab) {
         rule.sourceRegExps.forEach((regExp) => {
             if (url.match(regExp)) {
                 const interval = rule.interval * 1000;  // s -> ms
-                checkSourceFileChanged(tab, interval, regExp.source, url);
+                checkSourceFileChanged(tab, interval, url);
             }
         });
     });
@@ -187,32 +187,36 @@ async function continueMonitoring() {
 }
 
 
-async function checkSourceFileChanged(tab, interval, sourceId, url) {
+async function checkSourceFileChanged(tab, interval, url) {
     let hash;
     const tabRegistry = registry[tab.id] = registry[tab.id] || {};
-    const fileRegistry = tabRegistry[sourceId] = tabRegistry[sourceId] || {};
+    const fileRegistry = tabRegistry[url] = tabRegistry[url] || {};
 
     try {
         hash = await getFileHash(url);
     } catch (error) {
-        console.error(`Error retrieving hash for ${url}`, error);
+        console.error(url, 'Error retrieving hash:', error);
     }
 
     // Check whether the source file hash has changed.
     if (hash && fileRegistry.hash && fileRegistry.hash !== hash) {
         // Changed: reload tab.
+        disableTabMonitoring(tab.id);
         browser.tabs.reload(tab.id);
     } else {
         // Not changed or old/new hash cannot be retrieved:
         // Retry later.
         clearTimeout(fileRegistry.timer);
+        fileRegistry.hash = hash || fileRegistry.hash;
         fileRegistry.timer = setTimeout(() => {
             checkSourceFileChanged(...arguments);
         }, interval);
     }
+}
 
-    // Update registry with latest hash.
-    fileRegistry.hash = hash || fileRegistry.hash;
+
+function shortId(hash) {
+    return typeof hash === 'string' ? hash.substr(0, 5) : hash;
 }
 
 
