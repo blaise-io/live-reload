@@ -15,17 +15,20 @@ http://localhost:8000/test.html
 
 Source file match patterns:
 http://localhost:8000/test.js
+http://localhost:8000/test.css
 
 Verify:
- - Whether test.js is requested every <interval> seconds in your shell where
-   you ran the Python command.
- - Whether the tab gets refreshed every time you change test.js
+ - Whether test.css and test.js are requested every <interval> seconds in
+   your shell where you ran the Python command.
+ - Whether the tab gets refreshed every time you change these files
+ - Whether CSS inline reload update the updated css
 
 -->
 <html>
 <head>
     <meta charset="utf-8">
     <script src="./test.js"></script>
+    <link rel="stylesheet" href="test.css">
     <title>Test</title>
 </head>
 <body>
