@@ -75,7 +75,7 @@ document.body.addEventListener('click', (event) => {
     if (popAttr) {
         window.open(browser.extension.getURL(popAttr.getAttribute('data-pop')),
             'live-reload',
-            `width=400,height=590,
+            `width=400,height=640,
             left=${event.screenX - 440},
             top=${event.screenY - 50}`
         );

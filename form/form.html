@@ -26,7 +26,7 @@
         </div>
         <div class="form-row help">
             When a tab URL matches the pattern entered in the <strong>Host match pattern</strong> field,
-            this addon will start monitoring all script and style includes on that page.
+            this addon will start monitoring all script and stylesheet includes on that page.
             <a href="https://developer.mozilla.org/en-US/Add-ons/WebExtensions/Match_patterns" target="_blank">
                 <strong>How do I write a match pattern?</strong>
             </a>
@@ -51,8 +51,9 @@
                    value="2"> seconds
         </div>
         <div class="form-row help">
-            Filter which source files on the host page are monitored using the <strong>Source file match patterns</strong> field below.
-            Include a host in the match pattern. Separate match patterns with one or more line breaks.
+            <strong>Specify which source files on the host page you want to monitor.</strong>
+            Separate match patterns with one or more line breaks.
+            Relative paths are not allowed, so make sure to include a scheme and host name in the match pattern.
         </div>
         <div class="form-row browser-style">
             <label for="sources">Source file match patterns</label>
@@ -65,7 +66,7 @@
         <div class="form-row browser-style">
             <label>
                 <input type="checkbox" name="inlinecss" value="true">
-                Reload CSS inline without reloading the page
+                Inline reload stylesheets without reloading the page
             </label>
         </div>
         <div class="form-row form-submit browser-style">
