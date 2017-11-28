@@ -47,11 +47,7 @@ chrome.runtime.onMessage.addListener((message, sender) => {
             updateReloadRules(message.rules);
             break;
         case 'pageSourceFiles':
-            pageSourceFilesReceived(
-                message.scripts.concat(message.styles),
-                message.rule,
-                sender.tab
-            );
+            pageSourceFilesReceived(message.files, message.rule, sender.tab);
             break;
         case 'requestTabData':
             chrome.runtime.sendMessage({type: 'tabData', tabData});
@@ -96,7 +92,7 @@ function monitorTabIfEligible(tab) {
     rules.forEach((rule) => {
         // Host matches pattern, start monitoring.
         if (tab.url.match(rule.hostRegExp)) {
-            const code = `(${inject.toSource()})("${rule.id}");`;
+            const code = `(${injectSendSourceFiles.toSource()})("${rule.id}");`;
             browser.tabs.executeScript(tab.id, {code});
             // Flow continues at case "pageSourceFiles".
         }
@@ -104,15 +100,23 @@ function monitorTabIfEligible(tab) {
 }
 
 
-function inject(rule) {
+function injectSendSourceFiles(rule) {
     const scriptElements = document.querySelectorAll('script[src]');
     const styleElements = document.querySelectorAll('link[rel=stylesheet]');
+    const files = {
+        css: Array.from(styleElements).map((el) => el.href),
+        js: Array.from(scriptElements).map((el) => el.src),
+    };
+    chrome.runtime.sendMessage({type: 'pageSourceFiles', rule, files});
+}
 
-    chrome.runtime.sendMessage({
-        type: 'pageSourceFiles',
-        rule: rule,
-        scripts: Array.from(scriptElements).map((el) => el.src),
-        styles: Array.from(styleElements).map((el) => el.href),
+
+function injectUpdateUrl(url, updateUrl) {
+    const styleElements = document.querySelectorAll('link[rel=stylesheet]');
+    Array.from(styleElements).forEach((el) => {
+        if (el.href === url) {
+            el.href = updateUrl;
+        }
     });
 }
 
@@ -146,18 +150,19 @@ function pageSourceFilesReceived(files, ruleId, tab) {
 
 
 function checkSourceFileMatches(files, rule, tab) {
-    files.forEach((url) => {
-        rule.sourceRegExps.forEach((regExp) => {
-            if (url.match(regExp)) {
-                const interval = rule.interval * 1000;  // s -> ms
-                checkSourceFileChanged(tab, interval, url);
-            }
+    Object.entries(files).forEach(([type, filesOfType]) => {
+        filesOfType.forEach((url) => {
+            rule.sourceRegExps.forEach((regExp) => {
+                if (url.match(regExp)) {
+                    checkSourceFileChanged(tab, rule, url, type);
+                }
+            });
         });
     });
 }
 
 
-// We record the last tab accessed to populate the add reload rule form.
+// Record the last tab so we're able to populate the add reload rule form.
 function recordTab(tab) {
     if (!tab.incognito && tab.url.match(allUrlsRegExp)) {
         Object.assign(tabData, tab);
@@ -188,7 +193,7 @@ async function continueMonitoring() {
 }
 
 
-async function checkSourceFileChanged(tab, interval, url) {
+async function checkSourceFileChanged(tab, rule, url, type) {
     let hash;
     const tabRegistry = registry[tab.id] = registry[tab.id] || {};
     const fileRegistry = tabRegistry[url] = tabRegistry[url] || {};
@@ -201,29 +206,41 @@ async function checkSourceFileChanged(tab, interval, url) {
 
     // Check whether the source file hash has changed.
     if (hash && fileRegistry.hash && fileRegistry.hash !== hash) {
-        // Changed: reload tab.
-        disableTabMonitoring(tab.id);
-        browser.tabs.reload(tab.id);
+        if (type === 'css' && rule.inlinecss) {
+            // Inline reload:
+            delete(tabRegistry[url]);
+            const source = injectUpdateUrl.toSource();
+            const noCacheUrl = getNoCacheURL(url);
+            const code = `(${source})("${url}", "${noCacheUrl}");`;
+            browser.tabs.executeScript(tab.id, {code});
+            checkSourceFileChanged(tab, rule, noCacheUrl, type);
+        } else {
+            // Page reload:
+            browser.tabs.reload(tab.id);
+            disableTabMonitoring(tab.id);
+        }
     } else {
-        // Not changed or old/new hash cannot be retrieved:
-        // Retry later.
+        // Not changed or old/new hash cannot be retrieved, retry later:
         clearTimeout(fileRegistry.timer);
         fileRegistry.hash = hash || fileRegistry.hash;
         fileRegistry.timer = setTimeout(() => {
             checkSourceFileChanged(...arguments);
-        }, interval);
+        }, rule.interval * 1000);
     }
 }
 
 
-function shortId(hash) {
-    return typeof hash === 'string' ? hash.substr(0, 5) : hash;
+// Append a unique string to a URL to avoid cache.
+function getNoCacheURL(url) {
+    const param = 'X-LIVE-RELOAD-NOCACHE';
+    let noCacheUrl = url.replace(new RegExp(`(&|\\?)${param}=[\\d]+`), '');
+    noCacheUrl += noCacheUrl.indexOf('?') === -1 ? '?' : '&';
+    noCacheUrl += `${param}=${new Date().getTime().toString(36)}`;
+    return noCacheUrl;
 }
 
 
-/**
- * Get file contents and hash it.
- */
+// Get file contents and hash it.
 async function getFileHash(url) {
     const response = await fetch(url, {cache: 'reload'});
     const text = await response.text();
@@ -231,9 +248,7 @@ async function getFileHash(url) {
 }
 
 
-/**
- * Sha1 hash of a string.
- */
+// Retrieve the SHA1 hash for a string.
 async function sha1(str) {
     const encodedText = new TextEncoder('utf-8').encode(str);
     const sha1Buffer = await crypto.subtle.digest('SHA-1', encodedText);
