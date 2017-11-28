@@ -88,6 +88,7 @@ h2.form-row {
 }
 
 .form-submit {
+    padding-top: 16px;
     border-bottom: none;
 }
     .form-submit button {

@@ -33,6 +33,7 @@ function receiveTabData(message) {
         if (data.url) {
             hostField.value = data.url.replace(/^[\w]+:\/\//, '*://');
         }
+        document.querySelector('[name=inlinecss]').checked = true;
     }
 }
 
@@ -46,6 +47,8 @@ function populateUpdateForm(rule) {
         const input = document.querySelector(`[name="${key}"]`);
         if (input && value instanceof Array) {
             input.value = value.join('\n\n');
+        } else if (input && input.type === 'checkbox') {
+            input.checked = value;
         } else if (input) {
             input.value = value;
         }
@@ -57,7 +60,9 @@ function populateUpdateForm(rule) {
 function getFormData(form) {
     const values = {};
     Array.from(form.elements).forEach((input) => {
-        if (input.name) {
+        if (input.type === 'checkbox') {
+            values[input.name] = input.checked;
+        } else if (input.name) {
             values[input.name] = input.value.trim();
         }
     });
