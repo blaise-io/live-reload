@@ -20,6 +20,9 @@
     "default_icon": "icons/icon.svg",
     "default_popup": "popup/popup.html"
   },
+  "options_ui": {
+    "page": "options/options.html"
+  },
   "permissions": [
     "<all_urls>",
     "tabs",

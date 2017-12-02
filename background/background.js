@@ -1,26 +1,34 @@
 // When enabled, files will be monitored,
 // when disabled rules can still be managed.
-let addonEnabled = true;
+let isMonitoring = true;
 
 const tabData = {};
 const registry = {};
+const options = {};
 const rules = [];
 
 
-// Fetch reload rules from storage.
-getListRules().then(updateReloadRules);
+// Fetch options and rules.
+Promise.all([
+    fetch('../options/defaults.json').then((response) => response.json()),
+    browser.storage.local.get('options'),
+    getListRules(),
+]).then((result) => {
+    Object.assign(options, result[0], result[1].options);
+    updateReloadRules(result[2]);
+});
 
 
 // Fetch active state.
-browser.storage.local.get('addonEnabled').then((result) => {
-    toggleAddonEnabled(result.addonEnabled !== false);
+browser.storage.local.get('isMonitoring').then((result) => {
+    toggleAddonEnabled(result.isMonitoring !== false);
 });
 
 
 // Whenever a page in a tab is done loading, check whether the page
 // requires any source file monitoring.
 browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
-    if (addonEnabled && tab.status === 'complete') {
+    if (isMonitoring && tab.status === 'complete') {
         disableTabMonitoring(tab.id);
         monitorTabIfEligible(tab);
     }
@@ -35,22 +43,25 @@ browser.tabs.onRemoved.addListener((tabId) => {
 
 
 // Pick up on messages.
-chrome.runtime.onMessage.addListener((message, sender) => {
+browser.runtime.onMessage.addListener((message, sender) => {
     switch (message.type) {
-        case 'requestAddonEnabled':
-            chrome.runtime.sendMessage({type: 'addonEnabled', addonEnabled});
+        case 'isMonitoring?':
+            browser.runtime.sendMessage({type: 'isMonitoring', isMonitoring});
             break;
-        case 'addonEnabledChanged':
-            toggleAddonEnabled(message.addonEnabled);
+        case 'tabData?':
+            browser.runtime.sendMessage({type: 'tabData', tabData});
             break;
-        case 'reloadRulesChanged':
+        case 'monitoringChange':
+            toggleAddonEnabled(message.isMonitoring);
+            break;
+        case 'reloadRulesChange':
             updateReloadRules(message.rules);
+            break;
+        case 'optionsChange':
+            Object.assign(options, message.options);
             break;
         case 'pageSourceFiles':
             pageSourceFilesReceived(message.files, message.rule, sender.tab);
-            break;
-        case 'requestTabData':
-            chrome.runtime.sendMessage({type: 'tabData', tabData});
             break;
     }
 });
@@ -72,7 +83,7 @@ browser.tabs.onActivated.addListener((activeTab) => {
 
 // Toggle icon and title when monitoring is enable/disabled.
 function toggleAddonEnabled(enabled) {
-    addonEnabled = enabled;
+    isMonitoring = enabled;
     let action = {};
     if (enabled) {
         continueMonitoring();
@@ -107,7 +118,7 @@ function injectSendSourceFiles(rule) {
         css: Array.from(styleElements).map((el) => el.href),
         js: Array.from(scriptElements).map((el) => el.src),
     };
-    chrome.runtime.sendMessage({type: 'pageSourceFiles', rule, files});
+    browser.runtime.sendMessage({type: 'pageSourceFiles', rule, files});
 }
 
 
@@ -135,7 +146,12 @@ function updateReloadRules(updateRules) {
         });
     });
 
-    // Restart.
+    restart();
+}
+
+
+// Restart.
+function restart() {
     disableAllMonitoring();
     continueMonitoring();
 }
@@ -202,6 +218,14 @@ async function checkSourceFileChanged(tab, rule, url, type) {
         hash = await getFileHash(url);
     } catch (error) {
         console.error(url, 'Error retrieving hash:', error);
+    }
+
+    if (options['show.badge']) {
+        const count = Object.keys(tabRegistry).length.toString();
+        browser.browserAction.setBadgeBackgroundColor({color: 'black'});
+        browser.browserAction.setBadgeText({text: count, tabId: tab.id});
+    } else {
+        browser.browserAction.setBadgeText({text: '', tabId: tab.id});
     }
 
     // Check whether the source file hash has changed.
