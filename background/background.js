@@ -220,7 +220,7 @@ async function checkSourceFileChanged(tab, rule, url, type) {
         console.error(url, 'Error retrieving hash:', error);
     }
 
-    if (options['show.badge']) {
+    if (options['show.badge'] && isMonitoring) {
         const count = Object.keys(tabRegistry).length.toString();
         browser.browserAction.setBadgeBackgroundColor({color: 'black'});
         browser.browserAction.setBadgeText({text: count, tabId: tab.id});
