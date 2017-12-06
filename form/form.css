@@ -1,5 +1,12 @@
 body {
     font-size: 14px;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
+}
+body.loaded {
+    opacity: 1;
+    overflow: auto;
 }
 body.update .create,
 body.create .update {
@@ -12,6 +19,11 @@ body.create .create {
 
 .form-row-header {
     font-weight: bold;
+}
+form {
+    min-width: 390px;
+    max-width: 500px;
+    margin: 0 auto;
 }
 h2.form-row {
     border-bottom: none;

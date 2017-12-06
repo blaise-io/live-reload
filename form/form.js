@@ -1,4 +1,4 @@
-const matchUpdateRule = location.search.match(/rule=([^&]+)/);
+const matchUpdateRule = location.search.match(/rule=([^&$]+)/);
 const updateRuleId = matchUpdateRule === null ? null : matchUpdateRule[1];
 
 const hostField = document.getElementById('host');
@@ -16,6 +16,12 @@ if (updateRuleId !== null) {
 chrome.runtime.onMessage.addListener(receiveTabData);
 
 document.forms[0].addEventListener('submit', formSubmit);
+
+// Popup to match content.
+window.resizeTo(document.body.offsetWidth, document.body.offsetHeight);
+window.addEventListener('load', () => {
+    document.body.classList.add('loaded');
+});
 
 
 // Received last opened/modified tab data.
