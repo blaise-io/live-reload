@@ -232,11 +232,10 @@ async function checkSourceFileChanged(tab, rule, url, type) {
 
 // Append a unique string to a URL to avoid cache.
 function getNoCacheURL(url) {
-    const param = 'X-LIVE-RELOAD-NOCACHE';
-    let noCacheUrl = url.replace(new RegExp(`(&|\\?)${param}=[\\d]+`), '');
-    noCacheUrl += noCacheUrl.indexOf('?') === -1 ? '?' : '&';
-    noCacheUrl += `${param}=${new Date().getTime().toString(36)}`;
-    return noCacheUrl;
+    const urlObj = new URL(url);
+    const timeHash = new Date().getTime().toString(36).substr(3);
+    urlObj.searchParams.set('X-LR-NOCACHE', timeHash);
+    return urlObj.href;
 }
 
 
