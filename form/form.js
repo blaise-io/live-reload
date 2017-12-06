@@ -10,10 +10,10 @@ if (updateRuleId !== null) {
         window.close();
     });
 } else {
-    chrome.runtime.sendMessage({type: 'requestTabData'});
+    browser.runtime.sendMessage({type: 'tabData?'});
 }
 
-chrome.runtime.onMessage.addListener(receiveTabData);
+browser.runtime.onMessage.addListener(receiveTabData);
 
 document.forms[0].addEventListener('submit', formSubmit);
 
@@ -31,14 +31,12 @@ function receiveTabData(message) {
         const data = message.tabData || {};
         document.body.classList.add('create');
         document.title = 'Create a new reload rule';
-        chrome.runtime.onMessage.removeListener(receiveTabData);
+        browser.runtime.onMessage.removeListener(receiveTabData);
         if (data.title) {
             let title = `Reload rule for ${data.title.trim()}`;
             document.getElementById('title').value = title;
         }
-        if (data.url) {
-            hostField.value = data.url.replace(/^[\w]+:\/\//, '*://');
-        }
+        hostField.value = data.url || '';
         document.querySelector('[name=inlinecss]').checked = true;
     }
 }
@@ -108,7 +106,7 @@ async function formSubmit(event) {
         rules = await createRule(rule);
     }
 
-    chrome.runtime.sendMessage({type: 'reloadRulesChanged', rules});
+    browser.runtime.sendMessage({type: 'reloadRulesChange', rules});
 
     window.alert('Saved!');
     window.close();

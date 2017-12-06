@@ -1,5 +1,5 @@
-// See addonEnabled in background.js
-let addonEnabled = true;
+// See isMonitoring in background.js
+let isMonitoring = true;
 
 const template = document.querySelector('template#reload-rule');
 const enabledElement = document.querySelector('.addon-enabled');
@@ -11,11 +11,11 @@ getListRules().then(setReloadRules);
 
 
 // Fetch Addon active from background.js.
-chrome.runtime.sendMessage({type: 'requestAddonEnabled'});
-chrome.runtime.onMessage.addListener((message) => {
+browser.runtime.sendMessage({type: 'isMonitoring?'});
+browser.runtime.onMessage.addListener((message) => {
     switch (message.type) {
-        case 'addonEnabled':
-            addonEnabled = message.addonEnabled;
+        case 'isMonitoring':
+            isMonitoring = message.isMonitoring;
             updatePopupUI();
             break;
     }
@@ -25,9 +25,9 @@ chrome.runtime.onMessage.addListener((message) => {
 // Handle clicks on enabled/disabled state.
 document.querySelectorAll('.toggle').forEach((toggle) => {
     toggle.addEventListener('click', () => {
-        addonEnabled = !addonEnabled;
-        browser.storage.local.set({addonEnabled});
-        chrome.runtime.sendMessage({type: 'addonEnabledChanged', addonEnabled});
+        isMonitoring = !isMonitoring;
+        browser.storage.local.set({isMonitoring});
+        browser.runtime.sendMessage({type: 'monitoringChange', isMonitoring});
         updatePopupUI();
     });
 });
@@ -86,8 +86,8 @@ document.body.addEventListener('click', (event) => {
 
 
 function updatePopupUI() {
-    enabledElement.classList.toggle('hidden', !addonEnabled);
-    disabledElement.classList.toggle('hidden', addonEnabled);
+    enabledElement.classList.toggle('hidden', !isMonitoring);
+    disabledElement.classList.toggle('hidden', isMonitoring);
 }
 
 
