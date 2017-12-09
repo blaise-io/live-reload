@@ -71,16 +71,22 @@ document.body.addEventListener('click', (event) => {
     }
 
     // Popup.
-    const popAttr = event.target.closest('[data-pop]');
+    const popAttr = event.target.closest('[href]');
     if (popAttr) {
-        window.open(browser.extension.getURL(popAttr.getAttribute('data-pop')),
-            'live-reload',
-            `width=410,height=700,
-            left=${event.screenX - 440},
-            top=${event.screenY}`
+        const url = browser.extension.getURL(popAttr.getAttribute('href'));
+        const openedWindow = window.open(url, 'live-reload', [
+            'width=410',
+            'height=700',
+            `left=${event.screenX - 440}`,
+            `top=${event.screenY}`,
+            ].join(',')
         );
-        event.stopPropagation();
-        return;
+        if (openedWindow) {
+            // Cancel opening as hyperlink.
+            // https://bugzilla.mozilla.org/show_bug.cgi?id=1424553
+            event.preventDefault();
+            event.stopPropagation();
+        }
     }
 });
 
@@ -97,7 +103,7 @@ function setReloadRules(rules) {
         const panel = template.content.querySelector('.panel-list-item.rule');
         const dataRuleEl = template.content.querySelector('[data-rule-id]');
         panel.querySelector('.text').textContent = rule.title;
-        panel.setAttribute('data-pop', `form/form.html?rule=${rule.id}`);
+        panel.setAttribute('href', `/form/form.html?rule=${rule.id}`);
         dataRuleEl.setAttribute('data-rule-id', rule.id);
         document.querySelector('#rules-list').appendChild(
             document.importNode(template.content, true)

@@ -32,6 +32,12 @@ body {
         transform: scale(0.8);
     }
 
+    .panel a {
+        text-decoration: inherit;
+        cursor: inherit;
+        color: inherit;
+    }
+
 #no-rules {
     padding-top: 3px !important;
     padding-bottom: 15px !important;

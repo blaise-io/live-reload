@@ -3,6 +3,7 @@ body {
     overflow: hidden;
     opacity: 0;
     transition: opacity 0.2s ease-out;
+    background: #ddd;
 }
 body.loaded {
     opacity: 1;
@@ -24,6 +25,8 @@ form {
     min-width: 390px;
     max-width: 500px;
     margin: 0 auto;
+    min-height: 100vh;
+    background: #fff;
 }
 h2.form-row {
     border-bottom: none;
