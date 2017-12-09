@@ -81,12 +81,12 @@ document.body.addEventListener('click', (event) => {
             `top=${event.screenY}`,
             ].join(',')
         );
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=1424553
         if (openedWindow) {
             // Cancel opening as hyperlink.
-            // https://bugzilla.mozilla.org/show_bug.cgi?id=1424553
             event.preventDefault();
-            event.stopPropagation();
         }
+        event.stopPropagation();
     }
 });
 
