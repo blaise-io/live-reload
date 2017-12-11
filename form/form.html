@@ -25,14 +25,15 @@
                    placeholder="This title will be visible in the overview">
         </div>
         <div class="form-row help">
-            When a tab URL matches the pattern entered in the <strong>Host match pattern</strong> field,
-            this addon will start monitoring all script and stylesheet includes on that page.
+            When a tab URL matches the <strong>Host URL</strong> field,
+            this addon will start monitoring all script and stylesheet sources
+            on this page. This field also supports a match pattern.
             <a href="https://developer.mozilla.org/en-US/Add-ons/WebExtensions/Match_patterns" target="_blank">
-                <strong>How do I write a match pattern?</strong>
+                How do I write a match pattern?
             </a>
         </div>
         <div class="form-row browser-style">
-            <label for="host">Host match pattern</label>
+            <label for="host">Host URL</label>
             <input required
                    name="host"
                    id="host"
@@ -40,28 +41,30 @@
                    type="text"
                    placeholder="https://example.org/*">
         </div>
+        <div class="form-row help">
+            <strong>Specify the source file URLs you want to monitor on the host.</strong>
+            Enter absolute URLs including scheme and host name.
+            Separate multiple URLs with a line break.
+            This field also supports match patterns.
+        </div>
         <div class="form-row browser-style">
-            <label for="interval">Monitoring interval</label>
-            <input required
+            <label for="sources">Source file URLs</label>
+            <textarea required
+                      name="sources"
+                      id="sources"
+                      placeholder="https://example.org/src/*.js"
+                      class="code browser-style"></textarea>
+        </div>
+        <div class="form-row browser-style">
+            <label>
+            Monitor source URLs every <input required
                    name="interval"
                    id="interval"
                    type="number"
                    min="0.5"
                    step="0.5"
                    value="2"> seconds
-        </div>
-        <div class="form-row help">
-            <strong>Specify which source files on the host page you want to monitor.</strong>
-            Separate match patterns with one or more line breaks.
-            Relative paths are not allowed, so make sure to include a scheme and host name in the match pattern.
-        </div>
-        <div class="form-row browser-style">
-            <label for="sources">Source file match patterns</label>
-            <textarea required
-                      name="sources"
-                      id="sources"
-                      placeholder="https://example.org/src/*.js"
-                      class="code browser-style"></textarea>
+            </label>
         </div>
         <div class="form-row browser-style">
             <label>

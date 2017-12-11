@@ -67,9 +67,9 @@ h2.form-row {
         text-overflow: ellipsis ellipsis;
     }
     .form-row input[type=number] {
-        width: 5em;
+        width: 4em;
         display: inline-block;
-        margin-right: 5px;
+        margin: 0 5px;
     }
     .form-row textarea {
         height: 100px;
@@ -95,7 +95,7 @@ h2.form-row {
     color: #59d;
     font-size: 0.8em;
     border-bottom: none;
-    padding-bottom: 4px;
+    padding-bottom: 0;
 }
 
 .code {
