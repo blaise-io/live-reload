@@ -1,0 +1,15 @@
+{
+  "name": "live-reload-test-server",
+  "version": "0.0.0-dev",
+  "description": "NodeJS server for testing reload rules",
+  "scripts": {
+    "start": "supervisor -w test test/test.js",
+    "browser": "open http://127.0.0.1:3000"
+  },
+  "author": "Blaise Kal <blaisekal@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "express": "4.16.2",
+    "supervisor": "^0.12.0"
+  }
+}

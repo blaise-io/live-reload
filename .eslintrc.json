@@ -13,7 +13,7 @@
     "keyword-spacing": 2,
     "max-len": [1, 80, 4],
     "no-debugger": 2,
-    "no-console": [2, {"allow": ["error"]}],
+    "no-console": [2, {"allow": ["info", "error"]}],
     "no-extra-semi": 1,
     "no-trailing-spaces": 2,
     "no-unreachable": 1,
