@@ -10,7 +10,7 @@ const rules = [];
 
 // Fetch options and rules.
 Promise.all([
-    fetch('../options/defaults.json').then((response) => response.json()),
+    fetch('/options/defaults.json').then((response) => response.json()),
     browser.storage.local.get('options'),
     getListRules(),
 ]).then((result) => {
