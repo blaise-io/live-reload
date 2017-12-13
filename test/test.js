@@ -28,17 +28,23 @@ app.get('/', function(req, res) {
     const indexHtml = `
         <!doctype html>
         <html>
+            <meta charset="utf-8">
             <title>Live Reload test</title>
+            <style>
+                body { font: 18px monospace; width: 400px; margin: 30px auto }
+                pre { min-height: 5em }
+                pre::after { display: block }
+            </style>
+            <link rel="stylesheet" href="${styleUrl}">
             <pre></pre>
             <div>Create a reload rule</div>
             <dl>
                 <dt>Host URL</dt>
-                <dd>http://${req.hostname}/*</dd>
+                <dd>http://${req.get('Host')}/*</dd>
                 <dt>Source URLs</dt>
-                <dd>http://${req.hostname}/*.js<br>
-                    http://${req.hostname}/*.css</dd>
+                <dd>http://${req.get('Host')}/*.js<br>
+                    http://${req.get('Host')}/*.css</dd>
             </dl>
-            <link rel="stylesheet" href="${styleUrl}">
             <script src="${scriptUrl}"></script>
         </html>
     `;
@@ -58,10 +64,7 @@ app.get(styleUrl, function(req, res) {
     log(req);
     res.contentType('text/css');
     res.send(`
-        body { font: 14px monospace }
-        pre { font-size: 30px }
         pre::after {
-            display: block;
             content: " Style loaded at ${now()}"
         }
     `);
