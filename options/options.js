@@ -2,13 +2,10 @@ document.addEventListener('input', saveOptions);
 
 let options = {};
 
-const defaultOptionsPromise = fetch(
-    browser.extension.getURL('options/defaults.json')
-).then((response) => response.json());
-
-const savedOptionsPromise = browser.storage.local.get('options');
-
-Promise.all([defaultOptionsPromise, savedOptionsPromise]).then((result) => {
+Promise.all([
+    fetch('/options/defaults.json'.then((response) => response.json())),
+    browser.storage.local.get('options'),
+]).then((result) => {
     options = Object.assign({}, result[0], result[1].options);
     restoreOptions();
     setLastSaved();
