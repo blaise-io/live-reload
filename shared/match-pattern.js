@@ -56,8 +56,9 @@ function getRegExpForMatchPattern(pattern) {
         } else if (path.charAt(0) !== '/') {
             regex += '/';
             regex += path.replace(/\./g, '\\.').replace(/\*/g, '.*?');
-            regex += '/?';
         }
+    } else {
+        regex += '/?';
     }
 
     regex += '$';
