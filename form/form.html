@@ -26,7 +26,7 @@
         </div>
         <div class="form-row help">
             When a tab URL matches the <strong>Host URL</strong> field,
-            this addon will start monitoring all script and stylesheet sources
+            this addon will start monitoring all scripts, stylesheets and frames
             on this page. This field also supports a match pattern.
             <a href="https://developer.mozilla.org/en-US/Add-ons/WebExtensions/Match_patterns" target="_blank">
                 How do I write a match pattern?
@@ -42,7 +42,7 @@
                    placeholder="https://example.org/*">
         </div>
         <div class="form-row help">
-            <strong>Specify the source file URLs you want to monitor on the host.</strong>
+            <strong>Specify the URLs for the scripts, stylesheets and/or frames you want to monitor on the host.</strong>
             Enter absolute URLs including scheme and host name.
             Separate multiple URLs with a line break.
             This field also supports match patterns.
@@ -69,7 +69,11 @@
         <div class="form-row browser-style">
             <label>
                 <input type="checkbox" name="inlinecss" value="true">
-                Inline reload stylesheets without reloading the page
+                Reload stylesheets without reloading the host page
+            </label>
+            <label>
+                <input type="checkbox" name="inlineframes" value="true">
+                Reload frames without reloading the host page
             </label>
         </div>
         <div class="form-row form-submit browser-style">

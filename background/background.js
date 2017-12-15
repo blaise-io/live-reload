@@ -14,14 +14,18 @@ Promise.all([
     browser.storage.local.get('options'),
     getListRules(),
 ]).then((result) => {
-    Object.assign(options, result[0], result[1].options);
-    updateReloadRules(result[2]);
+    const [defaults, optionsResult, rulesResult] = result;
+    const userOptions = 'options' in optionsResult ? optionsResult.options : {};
+    Object.assign(options, defaults, userOptions);
+    updateReloadRules(rulesResult);
 });
 
 
 // Fetch active state.
 browser.storage.local.get('isMonitoring').then((result) => {
-    toggleAddonEnabled(result.isMonitoring !== false);
+    toggleAddonEnabled(
+        !('isMonitoring' in result) || result.isMonitoring
+    );
 });
 
 
@@ -38,7 +42,6 @@ browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
 // Stop monitoring and delete from registry  when a tab closes.
 browser.tabs.onRemoved.addListener((tabId) => {
     disableTabMonitoring(tabId);
-    delete(registry[tabId]);
 });
 
 
@@ -114,19 +117,23 @@ function monitorTabIfEligible(tab) {
 function injectSendSourceFiles(rule) {
     const scriptElements = document.querySelectorAll('script[src]');
     const styleElements = document.querySelectorAll('link[rel=stylesheet]');
+    const frameElements = document.querySelectorAll('iframe[src]');
     const files = {
+        host: [location.href],
         css: Array.from(styleElements).map((el) => el.href),
         js: Array.from(scriptElements).map((el) => el.src),
+        frame: Array.from(frameElements).map((el) => el.src),
     };
     browser.runtime.sendMessage({type: 'pageSourceFiles', rule, files});
 }
 
 
-function injectUpdateUrl(url, updateUrl) {
-    const styleElements = document.querySelectorAll('link[rel=stylesheet]');
-    Array.from(styleElements).forEach((el) => {
-        if (el.href === url) {
-            el.href = updateUrl;
+function injectInlineReload(type, url, updateUrl) {
+    const selector = {css: 'link[rel=stylesheet]', frame: 'iframe[src]'}[type];
+    const prop = {css: 'href', frame: 'src'}[type];
+    Array.from(document.querySelectorAll(selector)).forEach((el) => {
+        if (el[prop] === url) {
+            el[prop] = updateUrl;
         }
     });
 }
@@ -169,7 +176,7 @@ function checkSourceFileMatches(files, rule, tab) {
     Object.entries(files).forEach(([type, filesOfType]) => {
         filesOfType.forEach((url) => {
             rule.sourceRegExps.forEach((regExp) => {
-                if (url.match(regExp)) {
+                if (stripNoCacheParam(url).match(regExp)) {
                     checkSourceFileChanged(tab, rule, url, type);
                 }
             });
@@ -194,10 +201,21 @@ function disableAllMonitoring() {
 
 
 function disableTabMonitoring(tabId) {
+    setBadge(Number(tabId), null);
     Object.values(registry[tabId] || {}).forEach((fileRegistry) => {
         clearTimeout(fileRegistry.timer);
         delete(registry[tabId]);
     });
+}
+
+
+function setBadge(tabId, count) {
+    if (options['show.badge'] && isMonitoring && count !== null) {
+        browser.browserAction.setBadgeBackgroundColor({color: 'black'});
+        browser.browserAction.setBadgeText({text: count, tabId});
+    } else {
+        browser.browserAction.setBadgeText({text: '', tabId});
+    }
 }
 
 
@@ -212,7 +230,7 @@ async function continueMonitoring() {
 async function checkSourceFileChanged(tab, rule, url, type) {
     let hash;
     const tabRegistry = registry[tab.id] = registry[tab.id] || {};
-    const fileRegistry = tabRegistry[url] = tabRegistry[url] || {};
+    const fileRegistry = tabRegistry[url] = tabRegistry[url] || {timer: 0};
 
     try {
         hash = await getFileHash(url);
@@ -220,22 +238,19 @@ async function checkSourceFileChanged(tab, rule, url, type) {
         console.error(url, 'Error retrieving hash:', error);
     }
 
-    if (options['show.badge'] && isMonitoring) {
-        const count = Object.keys(tabRegistry).length.toString();
-        browser.browserAction.setBadgeBackgroundColor({color: 'black'});
-        browser.browserAction.setBadgeText({text: count, tabId: tab.id});
-    } else {
-        browser.browserAction.setBadgeText({text: '', tabId: tab.id});
-    }
+    setBadge(tab.id, Object.keys(tabRegistry).length.toString());
 
     // Check whether the source file hash has changed.
     if (hash && fileRegistry.hash && fileRegistry.hash !== hash) {
-        if (type === 'css' && rule.inlinecss) {
+        if (
+            (type === 'css' && rule.inlinecss) ||
+            (type === 'frame' && rule.inlineframes)
+        ) {
             // Inline reload:
             delete(tabRegistry[url]);
-            const source = injectUpdateUrl.toSource();
+            const source = injectInlineReload.toSource();
             const noCacheUrl = getNoCacheURL(url);
-            const code = `(${source})("${url}", "${noCacheUrl}");`;
+            const code = `(${source})("${type}", "${url}", "${noCacheUrl}");`;
             browser.tabs.executeScript(tab.id, {code});
             checkSourceFileChanged(tab, rule, noCacheUrl, type);
         } else {
@@ -257,8 +272,16 @@ async function checkSourceFileChanged(tab, rule, url, type) {
 // Append a unique string to a URL to avoid cache.
 function getNoCacheURL(url) {
     const urlObj = new URL(url);
-    const timeHash = new Date().getTime().toString(36).substr(3);
+    const timeHash = new Date().getTime().toString(36).substr(3).toUpperCase();
     urlObj.searchParams.set('X-LR-NOCACHE', timeHash);
+    return urlObj.href;
+}
+
+
+// Strip 'X-LR-NOCACHE' from url so matching won't be affected.
+function stripNoCacheParam(url) {
+    const urlObj = new URL(url);
+    urlObj.searchParams.delete('X-LR-NOCACHE');
     return urlObj.href;
 }
 

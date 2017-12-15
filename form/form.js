@@ -38,6 +38,7 @@ function receiveTabData(message) {
         }
         hostField.value = data.url || '';
         document.querySelector('[name=inlinecss]').checked = true;
+        document.querySelector('[name=inlineframes]').checked = true;
     }
 }
 
