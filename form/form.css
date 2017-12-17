@@ -1,3 +1,9 @@
+html,
+body {
+    margin: 0;
+    overflow-x: hidden;
+}
+
 body {
     font-size: 14px;
     overflow: hidden;
