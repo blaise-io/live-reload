@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Live Reload",
   "description": "Monitors source files on a page. Reloads the page or just the changed stylesheet when source files are updated.",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "author": "Blaise Kal",
   "homepage_url": "https://addons.mozilla.org/addon/live-reload/",
   "background": {
