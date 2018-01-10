@@ -74,19 +74,18 @@ document.body.addEventListener('click', (event) => {
     const popAttr = event.target.closest('[href]');
     if (popAttr) {
         const url = browser.extension.getURL(popAttr.getAttribute('href'));
-        const openedWindow = window.open(url, 'live-reload', [
-            'width=410',
-            'height=700',
-            `left=${event.screenX - 440}`,
-            `top=${event.screenY}`,
-            ].join(',')
-        );
-        // https://bugzilla.mozilla.org/show_bug.cgi?id=1424553
-        if (openedWindow) {
-            // Cancel opening as hyperlink.
-            event.preventDefault();
-        }
+        browser.windows.create({
+            url,
+            allowScriptsToClose: true,
+            type: 'popup',
+            width: 410,
+            height: 700,
+            left: event.screenX - 390,
+            top: event.screenY - 20,
+        });
         event.stopPropagation();
+        event.preventDefault();
+        return;
     }
 });
 
