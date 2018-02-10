@@ -4,6 +4,11 @@ const updateRuleId = matchUpdateRule === null ? null : matchUpdateRule[1];
 const hostField = document.getElementById('host');
 hostField.pattern = matchPatternRegExp.source;
 
+const filesystemError = `Not saved!
+\nDue to security restrictions in addons, local files cannot be monitored.
+\nYou can work around this issue by serving your files through a local server.
+\nMore info: https://github.com/blaise-io/live-reload/issues/3`;
+
 if (updateRuleId !== null) {
     getRuleById(updateRuleId).then(populateUpdateForm).catch((error) => {
         alert(error);
@@ -79,7 +84,7 @@ function getFormData(form) {
 // Form submit handler.
 async function formSubmit(event) {
     const rule = getFormData(event.target);
-    let error = false;
+    let error = null;
 
     event.preventDefault();
 
@@ -87,14 +92,18 @@ async function formSubmit(event) {
     rule.created = rule.created || (new Date()).toString();
     rule.modified = (new Date()).toString();
     rule.sources.forEach((source) => {
-        if (!error && !matchPatternRegExp.exec(source)) {
-            window.alert(`Not saved!\n\nInvalid match pattern:\n\n${source}`);
-            document.getElementById('sources').focus();
-            error = true;
+        if (!error) {
+            if ((/^file:\/\//i).exec(source)) {
+                error = filesystemError;
+            } else if (!matchPatternRegExp.exec(source)) {
+                error = `Not saved!\n\nInvalid match pattern:\n\n${source}`;
+            }
         }
     });
 
     if (error) {
+        window.alert(error);
+        document.getElementById('sources').focus();
         return;
     }
 
