@@ -1,5 +1,3 @@
-// When enabled, files will be monitored,
-// when disabled rules can still be managed.
 let isMonitoring = true;
 
 const tabData = {};
@@ -10,7 +8,8 @@ const rules = [];
 
 // Fetch options and rules.
 Promise.all([
-    fetch('/options/defaults.json').then((response) => response.json()),
+    fetch(browser.extension.getURL('/options/defaults.json'))
+        .then((response) => response.json()),
     browser.storage.local.get('options'),
     getListRules(),
 ]).then((result) => {
@@ -106,7 +105,7 @@ function monitorTabIfEligible(tab) {
     rules.forEach((rule) => {
         // Host matches pattern, start monitoring.
         if (tab.url.match(rule.hostRegExp)) {
-            const code = `(${injectSendSourceFiles.toSource()})("${rule.id}");`;
+            const code = `(${injectSendSourceFiles.toString()})("${rule.id}");`;
             browser.tabs.executeScript(tab.id, {code});
             // Flow continues at case "pageSourceFiles".
         }
@@ -248,7 +247,7 @@ async function checkSourceFileChanged(tab, rule, url, type) {
         ) {
             // Inline reload:
             delete(tabRegistry[url]);
-            const source = injectInlineReload.toSource();
+            const source = injectInlineReload.toString();
             const noCacheUrl = getNoCacheURL(url);
             const code = `(${source})("${type}", "${url}", "${noCacheUrl}");`;
             browser.tabs.executeScript(tab.id, {code});

@@ -76,7 +76,6 @@ document.body.addEventListener('click', (event) => {
         const url = browser.extension.getURL(popAttr.getAttribute('href'));
         browser.windows.create({
             url,
-            allowScriptsToClose: true,
             type: 'popup',
             width: 410,
             height: 700,

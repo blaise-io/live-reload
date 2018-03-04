@@ -1,9 +1,10 @@
-document.addEventListener('input', saveOptions);
+document.addEventListener('change', saveOptions);
 
 let options = {};
 
 Promise.all([
-    fetch('/options/defaults.json'.then((response) => response.json())),
+    fetch(browser.extension.getURL('/options/defaults.json'))
+        .then((response) => response.json()),
     browser.storage.local.get('options'),
 ]).then((result) => {
     options = Object.assign({}, result[0], result[1].options);

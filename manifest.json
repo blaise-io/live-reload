@@ -4,7 +4,7 @@
   "description": "Monitors source files on a page. Reloads the page or just the changed stylesheet when source files are updated.",
   "version": "1.4.2",
   "author": "Blaise Kal",
-  "homepage_url": "https://addons.mozilla.org/addon/live-reload/",
+  "homepage_url": "https://github.com/blaise-io/live-reload",
   "background": {
     "scripts": [
       "/shared/rules.js",
@@ -12,16 +12,13 @@
       "/background/background.js"
     ]
   },
-  "icons": {
-    "128": "icons/icon.svg"
-  },
   "browser_action": {
-    "browser_style": true,
-    "default_icon": "icons/icon.svg",
-    "default_popup": "popup/popup.html"
+    "browser_style": false,
+    "default_icon": "/icons/icon.svg",
+    "default_popup": "/popup/popup.html"
   },
   "options_ui": {
-    "page": "options/options.html"
+    "page": "/options/options.html"
   },
   "permissions": [
     "<all_urls>",

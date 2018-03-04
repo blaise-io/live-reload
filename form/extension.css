@@ -1,0 +1,187 @@
+/* stylelint-disable property-no-vendor-prefix */
+/* stylelint-disable property-no-vendor-prefix */
+
+/* Global */
+html,
+body {
+  background: transparent;
+  box-sizing: border-box;
+  color: #222;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  font: caption;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+}
+
+:focus {
+    outline: none;
+}
+
+body * {
+  box-sizing: border-box;
+  text-align: start;
+}
+
+.browser-style {
+  -moz-appearance: none;
+  margin-bottom: 6px;
+  text-align: left;
+}
+
+/* stylelint-disable property-no-vendor-prefix */
+/* Buttons */
+button.browser-style {
+  background-color: #fbfbfb;
+  border: 1px solid #b1b1b1;
+  box-shadow: 0 0 0 0 transparent;
+  font: caption;
+  height: 24px;
+  outline: 0 !important;
+  padding: 0 8px 0;
+  transition-duration: 250ms;
+  transition-property: box-shadow, border;
+}
+
+button.browser-style::-moz-focus-inner {
+  border: 0;
+  outline: 0;
+}
+
+/* Dropdowns */
+
+/* Radio Buttons */
+
+/* Checkboxes */
+
+/* Expander Button */
+
+/* Interactive States */
+button.browser-style:hover:not(.pressed):not(.disabled):not(.focused) {
+  background-color: #ebebeb;
+  border: 1px solid #b1b1b1;
+}
+
+button.browser-style:hover:active:not(.hover):not(.disabled):not(.focused) {
+  background-color: #d4d4d4;
+  border: 1px solid #858585;
+}
+
+button.browser-style:focus:not(.disabled) {
+  border-color: #fff !important;
+  box-shadow: 0 0 0 2px rgba(97, 181, 255, 0.75);
+}
+
+/* Fields */
+.browser-style > input[type="text"],
+textarea.browser-style {
+  background-color: #fff;
+  border: 1px solid #b1b1b1;
+  box-shadow: 0 0 0 0 rgba(97, 181, 255, 0);
+  font: caption;
+  padding: 0 6px 0;
+  transition-duration: 250ms;
+  transition-property: box-shadow;
+}
+
+.browser-style > input[type="text"] {
+  height: 24px;
+}
+
+/* Interactive States */
+.browser-style > input[type="text"]:not(disabled):hover,
+textarea.browser-style:not(disabled):hover {
+  border: 1px solid #858585;
+}
+
+.browser-style > input[type="text"]:focus,
+.browser-style > input[type="text"]:focus:hover,
+textarea.browser-style:focus,
+textarea.browser-style:focus:hover {
+  border-color: #0996f8;
+  box-shadow: 0 0 0 2px rgba(97, 181, 255, 0.75);
+}
+
+/* stylelint-disable property-no-vendor-prefix */
+
+.panel-section-separator {
+  background-color: rgba(0, 0, 0, 0.15);
+  min-height: 1px;
+}
+
+/* Panel Section - Header */
+
+/* Panel Section - List */
+.panel-section-list {
+  flex-direction: column;
+  padding: 4px 0;
+}
+
+.panel-list-item {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  height: 24px;
+  padding: 0 16px;
+}
+
+.panel-list-item:not(.disabled):hover {
+  background-color: rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.panel-list-item:not(.disabled):hover:active {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.panel-list-item.disabled {
+  color: #999;
+}
+
+.panel-list-item > .icon {
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+
+.panel-list-item > .text {
+  flex-grow: 10;
+}
+
+.panel-section-list .panel-section-separator {
+  margin: 4px 0;
+}
+
+/* Panel Section - Form Elements */
+
+/* Panel Section - Footer */
+.panel-section-footer {
+  background-color: rgba(0, 0, 0, 0.06);
+  border-top: 1px solid rgba(0, 0, 0, 0.15);
+  color: #1a1a1a;
+  display: flex;
+  flex-direction: row;
+  height: 41px;
+  margin-top: -1px;
+  padding: 0;
+}
+
+.panel-section-footer-button {
+  flex: 1 1 auto;
+  height: 100%;
+  margin: 0 -1px;
+  padding: 12px;
+  text-align: center;
+}
+
+.panel-section-footer-button:hover {
+  background-color: rgba(0, 0, 0, 0.06);
+}
+
+.panel-section-footer-button:hover:active {
+  background-color: rgba(0, 0, 0, 0.1);
+}
