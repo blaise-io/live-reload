@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "baseUrl": ".",
+        "paths": {
+            "zip-webpack-plugin": [
+                "node_modules/zip-webpack-plugin/index.js"
+            ],
+        },
+        "target": "es2017",
+        "lib": [
+            "dom",
+            "es2017"
+        ]
+    }
+}

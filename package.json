@@ -1,14 +1,56 @@
 {
   "name": "live-reload",
-  "version": "0.0.0-dev",
-  "description": "NodeJS server for testing reload rules",
+  "version": "1.5.0",
+  "description": "Monitors source files on a page. Reloads the page or just the changed stylesheet when source files are updated.",
+  "main": "npm run build",
+  "config": {
+    "webpack": "webpack --devtool inline-source-map --require ts-node/register --config webpack.config.ts"
+  },
   "scripts": {
-    "start": "supervisor -w test/* test/test.js",
-    "browser": "open http://127.0.0.1:3000"
+    "tag": "git tag $npm_package_version && git push origin $npm_package_version",
+    "test.page": "supervisor -w test/* test/test.js",
+    "test.browser": "open http://127.0.0.1:3000",
+    "build": "npm run firefox.build; npm run chrome.build",
+    "chrome.dev": "BROWSER=chrome $npm_package_config_webpack --watch --run-dev",
+    "chrome.build": "BROWSER=chrome $npm_package_config_webpack --run-prod",
+    "firefox.dev": "BROWSER=firefox $npm_package_config_webpack --watch --run-dev",
+    "firefox.build": "BROWSER=firefox $npm_package_config_webpack --run-prod"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/blaise-io/media-carousel.git"
   },
   "author": "Blaise Kal <blaisekal@gmail.com>",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/blaise-io/media-carousel/issues"
+  },
+  "homepage": "https://github.com/blaise-io/media-carousel#readme",
   "dependencies": {
+    "@types/clean-webpack-plugin": "0.1.2",
+    "@types/extract-text-webpack-plugin": "3.0.3",
+    "@types/firefox-webext-browser": "58.0.3",
+    "@types/html-webpack-plugin": "2.30.3",
+    "@types/mini-css-extract-plugin": "0.2.0",
+    "@types/node": "10.3.2",
+    "@types/webpack": "4.4.0",
+    "clean-webpack-plugin": "0.1.19",
+    "core-js": "2.5.7",
+    "css-loader": "0.28.11",
+    "extract-text-webpack-plugin": "4.0.0-beta.0",
+    "file-loader": "1.1.11",
+    "html-webpack-plugin": "3.2.0",
+    "mini-css-extract-plugin": "0.4.0",
+    "ts-loader": "4.4.1",
+    "ts-node": "6.1.0",
+    "tslint": "5.10.0",
+    "typescript": "2.9.1",
+    "webextension-polyfill": "0.2.1",
+    "webpack": "4.12.0",
+    "webpack-command": "0.2.1",
+    "zip-webpack-plugin": "3.0.0"
+  },
+  "devDependencies": {
     "express": "4.16.2",
     "supervisor": "0.12.0"
   }
