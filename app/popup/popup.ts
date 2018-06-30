@@ -1,12 +1,20 @@
+import "../icons/check.svg";
+import "../icons/cross.svg";
+import "../icons/delete.svg";
+import "../icons/script.svg";
+import "./popup.css";
+
+import { Rule } from "../lib/rule";
+
 // See isMonitoring in background.js
 let isMonitoring = true;
 
-const template = document.querySelector("template#reload-rule");
+const template: HTMLTemplateElement = document.querySelector("#reload-rule");
 const enabledElement = document.querySelector(".addon-enabled");
 const disabledElement = document.querySelector(".addon-disabled");
 
 // Fetch reload rules from storage.
-getListRules().then(setReloadRules);
+Rule.query().then(setReloadRules);
 
 // Fetch Addon active from background.js.
 browser.runtime.sendMessage({type: "isMonitoring?"});
@@ -47,7 +55,7 @@ document.body.addEventListener("click", (event) => {
     const confirmDeleteTrigger = clickEl.closest(".option-delete-confirm");
     if (confirmDeleteTrigger) {
         const id = confirmDeleteTrigger.getAttribute("data-rule-id");
-        deleteRule(id).then((rules) => {
+        Rule.delete(id).then((rules) => {
             const container = clickEl.closest(".split");
             container.parentNode.removeChild(container.previousElementSibling);
             container.parentNode.removeChild(container);
@@ -73,7 +81,7 @@ document.body.addEventListener("click", (event) => {
         const url = browser.extension.getURL(popAttr.getAttribute("href"));
         browser.windows.create({
             url,
-            type: "popup",
+            type: "popup" as browser.windows.CreateType.popup,
             width: 410,
             height: 700,
             left: event.screenX - 390,
@@ -96,7 +104,7 @@ function setReloadRules(rules) {
         const panel = template.content.querySelector(".panel-list-item.rule");
         const dataRuleEl = template.content.querySelector("[data-rule-id]");
         panel.querySelector(".text").textContent = rule.title;
-        panel.setAttribute("href", `/form/form.html?rule=${rule.id}`);
+        panel.setAttribute("href", `/form.html?rule=${rule.id}`);
         dataRuleEl.setAttribute("data-rule-id", rule.id);
         document.querySelector("#rules-list").appendChild(
             document.importNode(template.content, true)

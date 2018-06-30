@@ -1,34 +1,28 @@
-import * as icon from "./icons/icon.png";
+import * as iconImage from "./icons/icon.png";
 
 const manifest = {
     manifest_version: 2,
     name: "Live Reload",
-    description: "Monitors source files on a page. Reloads the page or " +
-                 "just the changed stylesheet when source files are updated.",
-    version: "1.4.2",
-    author: "Blaise Kal",
-    homepage_url: "https://github.com/blaise-io/live-reload",
+    version: process.env.npm_package_version,
+    description: process.env.npm_package_description,
+    homepage_url: process.env.npm_package_homepage,
+    permissions: ["<all_urls>", "tabs", "storage"],
+    applications: undefined,
     background: {
         scripts: ["/background.js"]
     },
     icons: {
-        128: icon
+        128: iconImage
     },
     browser_action: {
         browser_style: false,
-        default_icon: icon,
+        default_icon: iconImage,
         default_popup: "/popup.html"
     },
     options_ui: {
         page: "/options.html",
         browser_style: undefined,
     },
-    permissions: [
-        "<all_urls>",
-        "tabs",
-        "storage"
-    ],
-    applications: undefined
 };
 
 if (process.env.BROWSER === "firefox") {

@@ -1,34 +1,34 @@
-import {matchPatternRegExp} from "../match-pattern";
-
-const matchUpdateRule = location.search.match(/rule=([^&$]+)/);
-const updateRuleId = matchUpdateRule === null ? null : matchUpdateRule[1];
-
-const hostField = document.getElementById("host") as HTMLInputElement;
-hostField.pattern = matchPatternRegExp.source;
+import { matchPatternRegExp } from "../lib/match-pattern";
+import { Rule } from "../lib/rule";
+import "./extension.css";
+import "./form.css";
 
 const filesystemError = `Not saved!
 \nDue to security restrictions in addons, local files cannot be monitored.
 \nYou can work around this issue by serving your files through a local server.
 \nMore info: https://github.com/blaise-io/live-reload/issues/3`;
 
-if (updateRuleId !== null) {
-    getRuleById(updateRuleId).then(populateForm).catch((error) => {
-        alert(error);
-        window.close();
-    });
-} else {
-    browser.runtime.sendMessage({ type: "tabData?" });
+loadInitial();
+
+async function loadInitial() {
+    const matchUpdateRule = location.search.match(/rule=([^&$]+)/);
+    const updateRuleId = matchUpdateRule ? String(matchUpdateRule[1]) : null;
+
+    if (updateRuleId !== null) {
+        try {
+            const rule = await Rule.get(updateRuleId);
+            const title = document.title;
+            populateForm(rule, true, `Update: ${title}`);
+            document.querySelector("h2.update").textContent = title;
+        } catch (error) {
+            alert(error.message);
+            window.close();
+        }
+    } else {
+        browser.runtime.sendMessage({ type: "tabData?" });
+        browser.runtime.onMessage.addListener(receiveTabData);
+    }
 }
-
-browser.runtime.onMessage.addListener(receiveTabData);
-
-document.forms[0].addEventListener("submit", formSubmit);
-
-// Popup to match content.
-browser.windows.getCurrent().then((window) => {
-    browser.windows.update(window.id, { height: document.body.offsetHeight });
-    document.body.classList.add("loaded");
-});
 
 function getInput(name): HTMLInputElement {
     return document.querySelector(`[name=${name}]`);
@@ -38,82 +38,62 @@ function getValue(name): HTMLInputElement["value"] {
     return getInput(name).value;
 }
 
-function setValue(name, value) {
+function setValue(name: string, value: boolean | number | string) {
     const input = getInput(name);
     if (typeof value === "boolean") {
         input.checked = value;
     } else {
-        input.value = value;
+        input.value = value.toString();
     }
 }
 
 // Received last opened/modified tab data.
-// Use to pre-populate some fields.
 function receiveTabData(message) {
     if (message.type === "tabData") {
         browser.runtime.onMessage.removeListener(receiveTabData);
 
         const data = message.tabData || {};
-        const title = data.title ?
-            `Reload rule for ${data.title.trim()}` :
-            "";
+        const title = data.title ? `Reload rule for ${data.title.trim()}` : "";
         const rule = new Rule(title, data.url || "");
 
-        document.body.classList.add("create");
-
-        populateForm(rule, "create", "Create a new reload rule");
+        populateForm(rule, false, "Create a new reload rule");
     }
 }
 
-// Updating a rule, pre-populate the form with the rule.
-function populateForm(rule: Rule, className: string, title: string) {
-    document.body.classList.add(className);
+function populateForm(rule: Rule, update: boolean, title: string) {
+    document.body.classList.add(update ? "update" : "create");
     document.title = title;
-    document.querySelector("h2.update").textContent = document.title;
 
-    Object.entries(rule).forEach(([key, value]) => {
-        const input = getInput(key);
-        if (input && value instanceof Array) {
-            input.value = value.join("\n\n");
-        } else if (input && input.type === "checkbox") {
-            input.checked = Boolean(value);
-        } else if (input) {
-            input.value = String(value);
-        }
+    document.forms[0].addEventListener("submit", (event) => {
+        event.preventDefault();
+        handleFormSubmit(rule);
+        browser.runtime.sendMessage({ type: "reloadRulesChange" });
+        window.alert("Saved!");
+        window.close();
+    });
+
+    popupMatchContentHeight();
+
+    getInput("host").pattern = matchPatternRegExp.source;
+
+    setValue("title", rule.title);
+    setValue("host", rule.host);
+    setValue("interval", rule.interval);
+    setValue("inlinecss", rule.inlinecss);
+    setValue("inlineframes", rule.inlineframes);
+    setValue("sources", rule.sources.join("\n\n"));
+}
+
+function popupMatchContentHeight() {
+    browser.windows.getCurrent().then((window) => {
+        browser.windows.update(window.id, { height: document.body.offsetHeight });
+        document.body.classList.add("loaded");
     });
 }
 
-// // Get values from the populated form as structured data.
-// function getFormData(form): Rule { // TODO: Create Rule class
-//     const values = {};
-//     Array.from(form.elements).forEach((input: HTMLInputElement) => {
-//         if (input.name === "sources") {
-//             values[input.name] = input.value.split(/[\n]+/g).map((s) => s.trim());
-//         } else if (input.name === "interval") {
-//             values[input.name] = Number(input.value);
-//         } else if (input.type === "checkbox") {
-//             values[input.name] = input.checked;
-//         } else if (input.name) {
-//             values[input.name] = input.value.trim();
-//         }
-//     });
-//     // return values;
-//     return new Rule(
-//         getFieldByName("title").value || undefined,
-//         getFieldByName("id").value || undefined,
-//         getFieldByName("sources").value || undefined
-//     );
-// }
-
 // Form submit handler.
-async function formSubmit(event) {
+async function handleFormSubmit(rule: Rule) {
     let error = null;
-
-    const rule: Rule = (updateRuleId) ?
-        await getRuleById(updateRuleId) :
-        new Rule();
-
-    event.preventDefault();
 
     rule.interval = Number(getValue("interval"));
     rule.modified = new Date();
@@ -134,12 +114,5 @@ async function formSubmit(event) {
         return;
     }
 
-    const rules = (updateRuleId) ?
-        await updateRule(updateRuleId, rule) :
-        await createRule(rule);
-
-    browser.runtime.sendMessage({ type: "reloadRulesChange", rules });
-
-    window.alert("Saved!");
-    window.close();
+    await rule.save();
 }

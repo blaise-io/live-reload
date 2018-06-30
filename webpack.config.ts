@@ -9,10 +9,10 @@ import * as ZipPlugin from "zip-webpack-plugin";
 const config: webpack.Configuration = {
     entry: {
         background: resolve(__dirname, "app/background.ts"),
-        carousel: resolve(__dirname, "app/carousel/initialize.ts"),
-        inject: resolve(__dirname, "app/inject.ts"),
-        manifest: resolve(__dirname, "app/manifest.ts"),
+        form: resolve(__dirname, "app/form/form.ts"),
+        // manifest: resolve(__dirname, "app/manifest.ts"),  // TODO: Fix
         options: resolve(__dirname, "app/options/options.ts"),
+        popup: resolve(__dirname, "app/popup/popup.ts"),
     },
     output: {
         filename: "[name].js",
@@ -69,14 +69,19 @@ const config: webpack.Configuration = {
         new ExtractTextPlugin("manifest.json"),
         new MiniCssExtractPlugin(),
         new HtmlWebpackPlugin({
-            chunks: ["carousel"],
-            filename: "carousel.html",
-            template: resolve(__dirname, "app/carousel/carousel.ejs"),
+            chunks: ["form"],
+            filename: "form.html",
+            template: resolve(__dirname, "app/form/form.ejs"),
         }),
         new HtmlWebpackPlugin({
             chunks: ["options"],
             filename: "options.html",
             template: resolve(__dirname, "app/options/options.ejs"),
+        }),
+        new HtmlWebpackPlugin({
+            chunks: ["popup"],
+            filename: "popup.html",
+            template: resolve(__dirname, "app/popup/popup.ejs"),
         }),
         ...(process.argv.includes("--run-prod") ? [
             new ZipPlugin({
