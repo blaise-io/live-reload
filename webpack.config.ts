@@ -10,7 +10,7 @@ const config: webpack.Configuration = {
     entry: {
         background: resolve(__dirname, "app/background.ts"),
         form: resolve(__dirname, "app/form/form.ts"),
-        // manifest: resolve(__dirname, "app/manifest.ts"),  // TODO: Fix
+        manifest: resolve(__dirname, "app/manifest.ts"),
         options: resolve(__dirname, "app/options/options.ts"),
         popup: resolve(__dirname, "app/popup/popup.ts"),
     },

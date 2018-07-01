@@ -35,4 +35,4 @@ if (process.env.BROWSER === "firefox") {
     manifest.browser_action.browser_style = false;
 }
 
-export default JSON.stringify(manifest, null, 2);
+module.exports = JSON.stringify(manifest, null, 2);
