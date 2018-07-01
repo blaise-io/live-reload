@@ -10,9 +10,9 @@ import { Rule } from "../lib/rule";
 // See isMonitoring in background.js
 let isMonitoring = true;
 
-const template: HTMLTemplateElement = document.querySelector("#reload-rule");
-const enabledElement = document.querySelector(".addon-enabled");
-const disabledElement = document.querySelector(".addon-disabled");
+const template = document.querySelector("#reload-rule") as HTMLTemplateElement;
+const enabledElement = document.querySelector(".addon-enabled") as HTMLElement;
+const disabledElement = document.querySelector(".addon-disabled") as HTMLElement;
 
 // Fetch reload rules from storage.
 Rule.query().then(setReloadRules);
@@ -45,9 +45,9 @@ document.body.addEventListener("click", (event) => {
     // Delete.
     const deleteTrigger = clickEl.closest(".option-delete");
     if (deleteTrigger) {
-        const container = clickEl.closest(".split");
+        const container = clickEl.closest(".split") as HTMLDivElement;
         container.classList.toggle("hidden");
-        container.nextElementSibling.classList.toggle("hidden");
+        (container.nextElementSibling as HTMLDivElement).classList.toggle("hidden");
         event.stopPropagation();
         return;
     }
@@ -55,13 +55,14 @@ document.body.addEventListener("click", (event) => {
     // Confirm delete.
     const confirmDeleteTrigger = clickEl.closest(".option-delete-confirm");
     if (confirmDeleteTrigger) {
-        const id = confirmDeleteTrigger.getAttribute("data-rule-id");
-        Rule.delete(id).then((rules) => {
-            const container = clickEl.closest(".split");
-            container.parentNode.removeChild(container.previousElementSibling);
-            container.parentNode.removeChild(container);
-            updateNoRules(rules);
+        const id = confirmDeleteTrigger.getAttribute("data-rule-id") as string;
+        Rule.delete(id).then(() => {
+            const container = clickEl.closest(".split") as HTMLDivElement;
+            const parent = container.parentNode as HTMLElement;
+            parent.removeChild(container.previousElementSibling as HTMLElement);
+            parent.removeChild(container);
         });
+        Rule.query().then(updateNoRules);
         event.stopPropagation();
         return;
     }
@@ -69,8 +70,9 @@ document.body.addEventListener("click", (event) => {
     // Cancel Delete.
     const cancelDeleteTrigger = clickEl.closest(".option-delete-cancel");
     if (cancelDeleteTrigger) {
-        const container = clickEl.closest(".split");
-        container.previousElementSibling.classList.toggle("hidden");
+        const container = clickEl.closest(".split") as HTMLDivElement;
+        const previous = container.previousElementSibling as HTMLDivElement;
+        previous.classList.toggle("hidden");
         container.classList.toggle("hidden");
         event.stopPropagation();
         return;
@@ -79,7 +81,8 @@ document.body.addEventListener("click", (event) => {
     // Popup.
     const popAttr = clickEl.closest("[href]");
     if (popAttr) {
-        const url = browser.extension.getURL(popAttr.getAttribute("href"));
+        const href = popAttr.getAttribute("href") as string;
+        const url = browser.extension.getURL(href);
         browser.windows.create({
             url,
             type: "popup" as browser.windows.CreateType.popup,
@@ -99,21 +102,22 @@ function updatePopupUI() {
     disabledElement.classList.toggle("hidden", isMonitoring);
 }
 
-function setReloadRules(rules) {
+function setReloadRules(rules: Rule[]) {
     updateNoRules(rules);
     rules.forEach((rule) => {
-        const panel = template.content.querySelector(".panel-list-item.rule");
-        const dataRuleEl = template.content.querySelector("[data-rule-id]");
-        panel.querySelector(".text").textContent = rule.title;
+        const panel = template.content.querySelector(".panel-list-item.rule") as HTMLElement;
+        const dataRuleEl = template.content.querySelector("[data-rule-id]") as HTMLElement;
+        const dataText = panel.querySelector(".text") as HTMLSpanElement;
+        dataText.textContent = rule.title;
         panel.setAttribute("href", `/form.html?rule=${rule.id}`);
         dataRuleEl.setAttribute("data-rule-id", rule.id);
-        document.querySelector("#rules-list").appendChild(
+        (document.querySelector("#rules-list") as HTMLElement).appendChild(
             document.importNode(template.content, true)
         );
     });
 }
 
-function updateNoRules(rules) {
-    const noRules = document.getElementById("no-rules");
+function updateNoRules(rules: Rule[]) {
+    const noRules = document.getElementById("no-rules") as HTMLElement;
     noRules.classList.toggle("hidden", rules.length >= 1);
 }

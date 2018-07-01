@@ -23,7 +23,7 @@ class Rule {
 
     public static async query(): Promise<Rule[]> {
         const allData = await storage.get();
-        const rules = [];
+        const rules: Rule[] = [];
 
         // Convert old format to new.
         // TODO: Remove in next minor release.
@@ -85,9 +85,9 @@ class Rule {
     }
 
     constructor(
-        public title?: string,
-        public host?: string,
-        public sources?: string[],
+        public title: string,
+        public host: string,
+        public sources: string[] = [],
         public interval = 2,
         public id = Math.random().toString(36).substr(2),
         public created = new Date(),
