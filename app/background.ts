@@ -1,4 +1,4 @@
-import * as iconDisabled from "./icons/icon-disabled.svg";  // TODO: Render as PNG for non-Fx
+import * as iconDisabled from "./icons/icon-disabled.png";
 import * as icon from "./icons/icon.png";
 import { allUrlsRegExp } from "./lib/match-pattern";
 import { Rule } from "./lib/rule";

@@ -1,3 +1,4 @@
+import "../form/extension.css";
 import "../icons/check.svg";
 import "../icons/cross.svg";
 import "../icons/delete.svg";
