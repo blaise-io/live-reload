@@ -2,23 +2,21 @@ import * as iconDisabled from "./icons/icon-disabled.png";
 import * as icon from "./icons/icon.png";
 import { allUrlsRegExp } from "./lib/match-pattern";
 import { Rule } from "./lib/rule";
-import { defaults } from "./options/defaults";
+import { defaults, UserOptions } from "./options/defaults";
 
 let isMonitoring: boolean = true;
-
-const nocacheParam = "X-LR-NOCACHE";
 
 interface IFileProperties {
     timer?: number;
     hash?: string;
 }
 
-interface IFileRecord extends Record<string, IFileProperties> {
-}
+interface IFileRecord extends Record<string, IFileProperties> {}
 
+const NO_CACHE_PARAM = "X-LR-NOCACHE";
 const tabData = {};
 const registry: Record<number, IFileRecord> = {};
-const options = {};
+const options: UserOptions = {};
 const rules: Rule[] = [];
 
 enum SourceType {
@@ -40,14 +38,14 @@ async function main() {
 // Fetch active state.
 browser.storage.local.get("isMonitoring").then((result) => {
     toggleAddonEnabled(
-        !("isMonitoring" in result) || result.isMonitoring
+        !("isMonitoring" in result) || result.isMonitoring,
     );
 });
 
 // Whenever a page in a tab is done loading, check whether the page
 // requires any source file monitoring.
-browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
-    if (isMonitoring && tab.status === "complete") {
+browser.tabs.onUpdated.addListener((_, __, tab) => {
+    if (isMonitoring && tab.status === "complete" && tab.id) {
         disableTabMonitoring(tab.id);
         monitorTabIfEligible(tab);
     }
@@ -62,10 +60,10 @@ browser.tabs.onRemoved.addListener((tabId) => {
 browser.runtime.onMessage.addListener((message, sender) => {
     switch (message.type) {
         case "isMonitoring?":
-            browser.runtime.sendMessage({type: "isMonitoring", isMonitoring});
+            browser.runtime.sendMessage({ type: "isMonitoring", isMonitoring });
             break;
         case "tabData?":
-            browser.runtime.sendMessage({type: "tabData", tabData});
+            browser.runtime.sendMessage({ type: "tabData", tabData });
             break;
         case "monitoringChange":
             toggleAddonEnabled(message.isMonitoring);
@@ -77,13 +75,15 @@ browser.runtime.onMessage.addListener((message, sender) => {
             Object.assign(options, message.options);
             break;
         case "pageSourceFiles":
-            pageSourceFilesReceived(message.files, message.rule, sender.tab);
+            if (sender.tab) {
+                pageSourceFilesReceived(message.files, message.rule, sender.tab);
+            }
             break;
     }
 });
 
 // Record tab when tab URL changes.
-browser.tabs.onUpdated.addListener((id, changeInfo, tab) => {
+browser.tabs.onUpdated.addListener((_, __, tab) => {
     if (tab.status === "complete") {
         recordTab(tab);
     }
@@ -95,34 +95,35 @@ browser.tabs.onActivated.addListener((activeTab) => {
 });
 
 // Toggle icon and title when monitoring is enable/disabled.
-function toggleAddonEnabled(enabled) {
+function toggleAddonEnabled(enabled: boolean) {
     isMonitoring = enabled;
-    const action = {icon: undefined, title: undefined};
+    let iconPath: string;
+    let title: string;
     if (enabled) {
         continueMonitoring();
-        action.icon = icon;
-        action.title = "Live Reload";
+        iconPath = icon;
+        title = "Live Reload";
     } else {
         disableAllMonitoring();
-        action.icon = iconDisabled;
-        action.title = "Live Reload (disabled)";
+        iconPath = iconDisabled;
+        title = "Live Reload (disabled)";
     }
-    browser.browserAction.setIcon({path: action.icon});
-    browser.browserAction.setTitle({title: action.title});
+    browser.browserAction.setIcon({ path: iconPath });
+    browser.browserAction.setTitle({ title });
 }
 
-function monitorTabIfEligible(tab) {
+function monitorTabIfEligible(tab: browser.tabs.Tab) {
     rules.forEach((rule) => {
         // Host matches pattern, start monitoring.
-        if (tab.url.match(rule.hostRegExp)) {
+        if (tab.id && tab.url && tab.url.match(rule.hostRegExp)) {
             const code = `(${injectSendSourceFiles.toString()})("${rule.id}");`;
-            browser.tabs.executeScript(tab.id, {code});
+            browser.tabs.executeScript(tab.id, { code });
             // Flow continues at case "pageSourceFiles".
         }
     });
 }
 
-function injectSendSourceFiles(rule) {
+function injectSendSourceFiles(rule: Rule) {
     const js = Array.from(document.querySelectorAll("script[src]"));
     const css = Array.from(document.querySelectorAll("link[rel=stylesheet]"));
     const frames = Array.from(document.querySelectorAll("iframe[src]"));
@@ -132,17 +133,28 @@ function injectSendSourceFiles(rule) {
         [SourceType.JS]: js.map((el: HTMLScriptElement) => el.src),
         [SourceType.FRAME]: frames.map((el: HTMLIFrameElement) => el.src),
     };
-    browser.runtime.sendMessage({type: "pageSourceFiles", rule, files});
+    browser.runtime.sendMessage({ type: "pageSourceFiles", rule, files });
 }
 
-function injectInlineReload(type, url, updateUrl) {
-    const selector = {css: "link[rel=stylesheet]", frame: "iframe[src]"}[type];
-    const prop = {css: "href", frame: "src"}[type];
-    Array.from(document.querySelectorAll(selector)).forEach((el) => {
-        if (el[prop] === url) {
-            el[prop] = updateUrl;
-        }
-    });
+function injectInlineReload(type: SourceType, url: string, updateUrl: string) {
+    let selector: null | string = null;
+    let urlProperty: null | string = null;
+    switch (type) {
+        case SourceType.CSS:
+            selector = "link[rel=stylesheet]";
+            urlProperty = "href";
+        case SourceType.FRAME:
+            selector = "iframe[src]";
+            urlProperty = "src";
+    }
+
+    if (selector && urlProperty) {
+        Array.from(document.querySelectorAll(selector)).forEach((el) => {
+            if (el.getAttribute(urlProperty as string) === url) {
+                el.setAttribute(urlProperty as string, updateUrl);
+            }
+        });
+    }
 }
 
 async function updateRulesFromStorage() {
@@ -161,7 +173,7 @@ function restart() {
 function pageSourceFilesReceived(
     files: Record<SourceType, string[]>,
     ruleId: Rule["id"],
-    tab: browser.tabs.Tab
+    tab: browser.tabs.Tab,
 ) {
     const rule = rules.find((r) => r.id === ruleId);
     if (rule) {
@@ -172,7 +184,7 @@ function pageSourceFilesReceived(
 function checkSourceFileMatches(
     files: Record<SourceType, string[]>,
     rule: Rule,
-    tab: browser.tabs.Tab
+    tab: browser.tabs.Tab,
 ) {
     Object.entries(files).forEach(([type, filesOfType]) => {
         (filesOfType as string[]).forEach((url) => {
@@ -187,7 +199,7 @@ function checkSourceFileMatches(
 
 // Record the last tab so we're able to populate the add reload rule form.
 function recordTab(tab: browser.tabs.Tab) {
-    if (!tab.incognito && tab.url.match(allUrlsRegExp)) {
+    if (!tab.incognito && tab.url && tab.url.match(allUrlsRegExp)) {
         Object.assign(tabData, tab);
     }
 }
@@ -202,16 +214,16 @@ function disableTabMonitoring(tabId: number) {
     setBadge(Number(tabId), null);
     Object.values(registry[tabId] || {}).forEach((fileRegistry) => {
         clearTimeout(fileRegistry.timer);
-        delete(registry[tabId]);
+        delete (registry[tabId]);
     });
 }
 
-function setBadge(tabId, count) {
+function setBadge(tabId: number, count: number | null) {
     if (options["show.badge"] && isMonitoring && count !== null) {
-        browser.browserAction.setBadgeBackgroundColor({color: "black"});
-        browser.browserAction.setBadgeText({text: count, tabId});
+        browser.browserAction.setBadgeBackgroundColor({ color: "black" });
+        browser.browserAction.setBadgeText({ text: count.toString(), tabId });
     } else {
-        browser.browserAction.setBadgeText({text: "", tabId});
+        browser.browserAction.setBadgeText({ text: "", tabId });
     }
 }
 
@@ -231,11 +243,13 @@ async function checkSourceFileChanged(
     tab: browser.tabs.Tab,
     rule: Rule,
     url: string,
-    type: SourceType
+    type: SourceType,
 ) {
     let hash;
+
+    tab.id = tab.id || 0;
     const tabRegistry = registry[tab.id] = registry[tab.id] || {};
-    const fileRegistry = tabRegistry[url] = tabRegistry[url] || {timer: null};
+    const fileRegistry = tabRegistry[url] = tabRegistry[url] || { timer: null };
 
     try {
         hash = await getFileHash(url);
@@ -243,7 +257,7 @@ async function checkSourceFileChanged(
         console.error(url, "Error retrieving hash:", error);
     }
 
-    setBadge(tab.id, Object.keys(tabRegistry).length.toString());
+    setBadge(tab.id, Object.keys(tabRegistry).length);
 
     // Check whether the source file hash has changed.
     if (hash && fileRegistry.hash && fileRegistry.hash !== hash) {
@@ -252,11 +266,11 @@ async function checkSourceFileChanged(
             (type === SourceType.FRAME && rule.inlineframes)
         ) {
             // Inline reload:
-            delete(tabRegistry[url]);
+            delete (tabRegistry[url]);
             const source = injectInlineReload.toString();
             const noCacheUrl = getNoCacheURL(url);
             const code = `(${source})("${type}", "${url}", "${noCacheUrl}");`;
-            browser.tabs.executeScript(tab.id, {code});
+            browser.tabs.executeScript(tab.id, { code });
             checkSourceFileChanged(tab, rule, noCacheUrl, type);
         } else {
             // Page reload:
@@ -277,20 +291,20 @@ async function checkSourceFileChanged(
 function getNoCacheURL(url: string): string {
     const urlObj = new URL(url);
     const timeHash = new Date().getTime().toString(36).substr(3).toUpperCase();
-    urlObj.searchParams.set(nocacheParam, timeHash);
+    urlObj.searchParams.set(NO_CACHE_PARAM, timeHash);
     return urlObj.href;
 }
 
 // Strip 'X-LR-NOCACHE' from url so matching won't be affected.
 function stripNoCacheParam(url: string): string {
     const urlObj = new URL(url);
-    urlObj.searchParams.delete(nocacheParam);
+    urlObj.searchParams.delete(NO_CACHE_PARAM);
     return urlObj.href;
 }
 
 // Get file contents and hash it.
 async function getFileHash(url: string): Promise<string> {
-    const response = await fetch(url, {cache: "reload"});
+    const response = await fetch(url, { cache: "reload" });
     const text = await response.text();
     return sha1(text);
 }

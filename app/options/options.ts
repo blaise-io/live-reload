@@ -1,16 +1,17 @@
+import { defaults, UserOptions } from "./defaults";
+
 document.addEventListener("change", saveOptions);
 
-let options = {};
+let options: UserOptions = {};
 
-Promise.all([
-    fetch(browser.extension.getURL("/options/defaults.json"))
-        .then((response) => response.json()),
-    browser.storage.local.get("options"),
-]).then((result) => {
-    options = Object.assign({}, result[0], result[1].options);
+init();
+
+async function init() {
+    const savedOptions: UserOptions = await browser.storage.local.get("options");
+    options = {...defaults, ...savedOptions};
     restoreOptions();
     setLastSaved();
-});
+}
 
 function getInputs(): HTMLInputElement[] {
     return Array.from(document.querySelectorAll("input[type=checkbox][name]"));
@@ -19,7 +20,7 @@ function getInputs(): HTMLInputElement[] {
 function restoreOptions() {
     const checkboxes = getInputs();
     checkboxes.forEach((input) => {
-        input.checked = options[input.name];
+        input.checked = Boolean(options[input.name]);
     });
 }
 
@@ -37,7 +38,7 @@ function setLastSaved() {
         const lastSavedElement = (
             document.querySelector("#last-saved") as HTMLSpanElement
         );
-        const time = (new Date(options["meta.lastSaved"])).toLocaleString();
+        const time = (new Date(options["meta.lastSaved"] as string)).toLocaleString();
         lastSavedElement.textContent = `Last saved ${time}.`;
         lastSavedElement.style.display = "block";
     }

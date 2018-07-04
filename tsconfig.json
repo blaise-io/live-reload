@@ -1,24 +1,20 @@
 {
   "compilerOptions": {
     "alwaysStrict": true,
-    "strictNullChecks": true,
+    "baseUrl": ".",
+    "lib": [
+      "dom",
+      "es2017"
+    ],
+    "module": "commonjs",
     "noImplicitAny": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "sourceMap": true,
-    "module": "commonjs",
-    "baseUrl": ".",
-    "paths": {
-      "zip-webpack-plugin": [
-        "node_modules/zip-webpack-plugin/index.js"
-      ]
-    },
-    "target": "es2017",
-    "lib": [
-      "dom",
-      "es2017"
-    ]
+    "strictFunctionTypes": true,
+    "strictNullChecks": true,
+    "target": "es2017"
   }
 }

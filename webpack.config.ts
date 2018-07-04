@@ -19,13 +19,13 @@ const config: webpack.Configuration = {
         path: resolve(`dist/${process.env.BROWSER}`),
     },
     resolve: {
-        extensions: [".ts"]
+        extensions: [".ts"],
     },
     module: {
         rules: [
             {
                 test: /\/manifest\.ts$/,
-                use: ExtractTextPlugin.extract({ use: [] })
+                use: ExtractTextPlugin.extract({ use: [] }),
             },
             {
                 test: /\.ts$/,
@@ -37,9 +37,9 @@ const config: webpack.Configuration = {
                     MiniCssExtractPlugin.loader,
                     {
                         loader: "css-loader",
-                        options: { minimize: true }
-                    }
-                ]
+                        options: { minimize: true },
+                    },
+                ],
             },
             {
                 test: /\.(png|svg)$/,
@@ -50,10 +50,10 @@ const config: webpack.Configuration = {
                         name: "[path][name].[ext]",
                         outputPath: "",
                         publicPath: "/",
-                    }
-                }]
+                    },
+                }],
             },
-        ]
+        ],
     },
     plugins: [
         new CleanWebpackPlugin([
@@ -90,9 +90,9 @@ const config: webpack.Configuration = {
                     process.env.npm_package_name,
                     process.env.npm_package_version,
                     process.env.BROWSER,
-                ].join("-") + ".zip"
-            })
-        ] : [])
+                ].join("-") + ".zip",
+            }),
+        ] : []),
     ],
 };
 

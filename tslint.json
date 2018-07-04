@@ -13,8 +13,8 @@
         "multiline": {
           "objects": "always",
           "arrays": "always",
-          "functions": "never",
-          "typeLiterals": "ignore"
+          "functions": "always",
+          "typeLiterals": "always"
         },
         "esSpecCompliant": true
       }

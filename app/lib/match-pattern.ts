@@ -3,14 +3,14 @@ const hostSegment = "(\\*|(?:\\*\\.)?(?:[^/*]+))?";
 const pathSegment = "(.*)";
 
 const matchPatternRegExp = new RegExp(
-    `^${schemeSegment}://${hostSegment}/${pathSegment}$`
+    `^${schemeSegment}://${hostSegment}/${pathSegment}$`,
 );
 
 const allUrlsRegExp = new RegExp(
-    `^${schemeSegment}://`
+    `^${schemeSegment}://`,
 );
 
-function getRegExpForMatchPattern(pattern) {
+function getRegExpForMatchPattern(pattern: string) {
     if (pattern === "<all_urls>") {
         return allUrlsRegExp;
     }
@@ -21,7 +21,10 @@ function getRegExpForMatchPattern(pattern) {
         return (/^$/);
     }
 
-    let [, scheme, host, path] = match;  // tslint:disable-line:prefer-const
+    const scheme = match[1];
+    let host = match[2];
+    const path = match[3];
+
     if (!host) {
         console.error("Invalid host in pattern", pattern);
         return (/^$/);

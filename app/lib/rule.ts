@@ -16,7 +16,7 @@ interface IStorageRule {
 }
 
 enum StorageType {
-    Rule = 0
+    Rule = 0,
 }
 
 class Rule {
@@ -42,7 +42,7 @@ class Rule {
             return rules;
         }
 
-        Object.entries(allData as IStorageRule[]).forEach(([key, data]) => {
+        Object.entries(allData as IStorageRule[]).forEach(([_, data]) => {
             if (data._type === StorageType.Rule) {
                 rules.push(Rule.fromStorage(data));
             }

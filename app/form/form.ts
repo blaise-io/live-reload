@@ -14,12 +14,13 @@ async function loadInitial() {
     const matchUpdateRule = location.search.match(/rule=([^&$]+)/);
     const updateRuleId = matchUpdateRule ? String(matchUpdateRule[1]) : null;
 
-    if (updateRuleId !== null) {
+    if (updateRuleId) {
         try {
             const rule = await Rule.get(updateRuleId);
             const title = document.title;
+            const h2 = document.querySelector("h2.update") as HTMLHeadingElement;
             populateForm(rule, true, `Update: ${title}`);
-            document.querySelector("h2.update").textContent = title;
+            h2.textContent = title;
         } catch (error) {
             alert(error.message);
             window.close();
@@ -30,11 +31,11 @@ async function loadInitial() {
     }
 }
 
-function getInput(name): HTMLInputElement {
-    return document.querySelector(`[name=${name}]`);
+function getInput(name: string): HTMLInputElement {
+    return document.querySelector(`[name=${name}]`) as HTMLInputElement;
 }
 
-function getValue(name): HTMLInputElement["value"] {
+function getValue(name: string): HTMLInputElement["value"] {
     return getInput(name).value;
 }
 
@@ -48,7 +49,7 @@ function setValue(name: string, value: boolean | number | string) {
 }
 
 // Received last opened/modified tab data.
-function receiveTabData(message) {
+function receiveTabData(message: {type: string, tabData: browser.tabs.Tab}) {
     if (message.type === "tabData") {
         browser.runtime.onMessage.removeListener(receiveTabData);
 
@@ -85,15 +86,19 @@ function populateForm(rule: Rule, update: boolean, title: string) {
 }
 
 function popupMatchContentHeight() {
-    browser.windows.getCurrent().then((window) => {
-        browser.windows.update(window.id, { height: document.body.offsetHeight });
-        document.body.classList.add("loaded");
+    browser.windows.getCurrent().then((window: browser.windows.Window) => {
+        if (window.id) {
+            browser.windows.update(window.id, {
+                height: document.body.offsetHeight,
+            });
+            document.body.classList.add("loaded");
+        }
     });
 }
 
 // Form submit handler.
 async function handleFormSubmit(rule: Rule) {
-    let error = null;
+    let error: string | null = null;
 
     rule.interval = Number(getValue("interval"));
     rule.modified = new Date();
@@ -110,7 +115,7 @@ async function handleFormSubmit(rule: Rule) {
 
     if (error) {
         window.alert(error);
-        document.getElementById("sources").focus();
+        getInput("sources").focus();
         return;
     }
 
