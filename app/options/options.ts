@@ -4,14 +4,12 @@ document.addEventListener("change", saveOptions);
 
 let options: UserOptions = {};
 
-init();
-
-async function init() {
+(async () => {
     const savedOptions: UserOptions = await browser.storage.local.get("options");
     options = {...defaults, ...savedOptions};
     restoreOptions();
     setLastSaved();
-}
+})();
 
 function getInputs(): HTMLInputElement[] {
     return Array.from(document.querySelectorAll("input[type=checkbox][name]"));

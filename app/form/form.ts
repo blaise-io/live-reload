@@ -3,14 +3,12 @@ import { Rule } from "../lib/rule";
 import "./extension.css";
 import "./form.css";
 
-const filesystemError = `Not saved!
+const FILESYSTEM_ERROR = `Not saved!
 \nDue to security restrictions in addons, local files cannot be monitored.
 \nYou can work around this issue by serving your files through a local server.
 \nMore info: https://github.com/blaise-io/live-reload/issues/3`;
 
-loadInitial();
-
-async function loadInitial() {
+(async () => {
     const matchUpdateRule = location.search.match(/rule=([^&$]+)/);
     const updateRuleId = matchUpdateRule ? String(matchUpdateRule[1]) : null;
 
@@ -29,7 +27,7 @@ async function loadInitial() {
         browser.runtime.sendMessage({ type: "tabData?" });
         browser.runtime.onMessage.addListener(receiveTabData);
     }
-}
+})();
 
 function getInput(name: string): HTMLInputElement {
     return document.querySelector(`[name=${name}]`) as HTMLInputElement;
@@ -106,7 +104,7 @@ async function handleFormSubmit(rule: Rule) {
     rule.sources.forEach((source) => {
         if (!error) {
             if ((/^file:\/\//i).exec(source)) {
-                error = filesystemError;
+                error = FILESYSTEM_ERROR;
             } else if (!matchPatternRegExp.exec(source)) {
                 error = `Not saved!\n\nInvalid match pattern:\n\n${source}`;
             }

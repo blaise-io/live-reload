@@ -20,20 +20,18 @@ const options: UserOptions = {};
 const rules: Rule[] = [];
 
 enum SourceType {
-    HOST = "host",
-    CSS = "css",
-    JS = "js",
-    FRAME = "frame",
+    HOST = "HOST",
+    CSS = "CSS",
+    JS = "JS",
+    FRAME = "FRAME",
 }
 
-main();
-
-async function main() {
+(async () => {
     const optionsResult = await browser.storage.local.get("options");
     const userOptions = "options" in optionsResult ? optionsResult.options : {};
     Object.assign(options, defaults, userOptions);
     updateRulesFromStorage();
-}
+})();
 
 // Fetch active state.
 browser.storage.local.get("isMonitoring").then((result) => {
@@ -124,16 +122,21 @@ function monitorTabIfEligible(tab: browser.tabs.Tab) {
 }
 
 function injectSendSourceFiles(rule: Rule) {
-    const js = Array.from(document.querySelectorAll("script[src]"));
-    const css = Array.from(document.querySelectorAll("link[rel=stylesheet]"));
-    const frames = Array.from(document.querySelectorAll("iframe[src]"));
-    const files = {
+    const css: HTMLLinkElement[] = Array.from(
+        document.querySelectorAll("link[rel=stylesheet]"),
+    );
+    const js: HTMLScriptElement[] = Array.from(
+        document.querySelectorAll("script[src]"),
+    );
+    const frames: HTMLIFrameElement[] = Array.from(
+        document.querySelectorAll("iframe[src]"),
+    );
+    browser.runtime.sendMessage({ type: "pageSourceFiles", rule, files: {
         [SourceType.HOST]: [location.href],
-        [SourceType.CSS]: css.map((el: HTMLLinkElement) => el.href),
-        [SourceType.JS]: js.map((el: HTMLScriptElement) => el.src),
-        [SourceType.FRAME]: frames.map((el: HTMLIFrameElement) => el.src),
-    };
-    browser.runtime.sendMessage({ type: "pageSourceFiles", rule, files });
+        [SourceType.CSS]: css.map((element) => element.href),
+        [SourceType.JS]: js.map((element) => element.src),
+        [SourceType.FRAME]: frames.map((element) => element.src),
+    }});
 }
 
 function injectInlineReload(type: SourceType, url: string, updateUrl: string) {
