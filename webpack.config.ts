@@ -6,8 +6,13 @@ import { resolve } from "path";
 import * as webpack from "webpack";
 import * as ZipPlugin from "zip-webpack-plugin";
 
+function polyfillChunks(...chunks: string[]): string[] {
+    return process.env.BROWSER === "firefox" ? chunks : ["polyfill", ...chunks];
+}
+
 const config: webpack.Configuration = {
     entry: {
+        polyfill: "webextension-polyfill",
         background: resolve(__dirname, "app/background.ts"),
         form: resolve(__dirname, "app/form/form.ts"),
         manifest: resolve(__dirname, "app/manifest.ts"),
@@ -69,23 +74,27 @@ const config: webpack.Configuration = {
         new ExtractTextPlugin("manifest.json"),
         new MiniCssExtractPlugin(),
         new HtmlWebpackPlugin({
-            chunks: ["form"],
+            chunks: polyfillChunks("form"),
             filename: "form.html",
             template: resolve(__dirname, "app/form/form.html"),
         }),
         new HtmlWebpackPlugin({
-            chunks: ["options"],
+            chunks: polyfillChunks("options"),
             filename: "options.html",
             template: resolve(__dirname, "app/options/options.html"),
         }),
         new HtmlWebpackPlugin({
-            chunks: ["popup"],
+            chunks: polyfillChunks("popup"),
             filename: "popup.html",
             template: resolve(__dirname, "app/popup/popup.html"),
         }),
         ...(process.argv.includes("--run-prod") ? [
             new ZipPlugin({
-                exclude: /manifest\.js$/,
+                exclude: [
+                    "manifest.js", ...(
+                        process.env.BROWSER === "firefox" ? [/polyfill\.js/] : []
+                    ),
+                ],
                 filename: [
                     process.env.npm_package_name,
                     process.env.npm_package_version,

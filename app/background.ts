@@ -110,15 +110,20 @@ function toggleAddonEnabled(enabled: boolean) {
     browser.browserAction.setTitle({ title });
 }
 
-function monitorTabIfEligible(tab: browser.tabs.Tab) {
-    rules.forEach((rule) => {
+async function monitorTabIfEligible(tab: browser.tabs.Tab) {
+    for (const rule of rules) {
         // Host matches pattern, start monitoring.
         if (tab.id && tab.url && tab.url.match(rule.hostRegExp)) {
+            // Chrome et al need browser polyfill first.
+            if (process.env.BROWSER !== "firefox") {
+                const file = browser.extension.getURL("/polyfill.js");
+                await browser.tabs.executeScript(tab.id as number, {file});
+            }
             const code = `(${injectSendSourceFiles.toString()})("${rule.id}");`;
             browser.tabs.executeScript(tab.id, { code });
             // Flow continues at case "pageSourceFiles".
         }
-    });
+    }
 }
 
 function injectSendSourceFiles(rule: Rule) {

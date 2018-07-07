@@ -2,9 +2,8 @@ import "../icons/check.svg";
 import "../icons/cross.svg";
 import "../icons/delete.svg";
 import "../icons/script.svg";
-import "./popup.css";
-
 import { Rule } from "../lib/rule";
+import "./popup.css";
 
 // See isMonitoring in background.js
 let isMonitoring = true;
@@ -111,7 +110,7 @@ function setReloadRules(rules: Rule[]) {
         panel.setAttribute("href", `/form.html?rule=${rule.id}`);
         dataRuleEl.setAttribute("data-rule-id", rule.id);
         (document.querySelector("#rules-list") as HTMLElement).appendChild(
-            document.importNode(template.content, true)
+            document.importNode(template.content, true),
         );
     });
 }
