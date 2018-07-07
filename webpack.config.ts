@@ -71,17 +71,17 @@ const config: webpack.Configuration = {
         new HtmlWebpackPlugin({
             chunks: ["form"],
             filename: "form.html",
-            template: resolve(__dirname, "app/form/form.ejs"),
+            template: resolve(__dirname, "app/form/form.html"),
         }),
         new HtmlWebpackPlugin({
             chunks: ["options"],
             filename: "options.html",
-            template: resolve(__dirname, "app/options/options.ejs"),
+            template: resolve(__dirname, "app/options/options.html"),
         }),
         new HtmlWebpackPlugin({
             chunks: ["popup"],
             filename: "popup.html",
-            template: resolve(__dirname, "app/popup/popup.ejs"),
+            template: resolve(__dirname, "app/popup/popup.html"),
         }),
         ...(process.argv.includes("--run-prod") ? [
             new ZipPlugin({

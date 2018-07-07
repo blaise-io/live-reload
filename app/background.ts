@@ -1,6 +1,6 @@
 import * as iconDisabled from "./icons/icon-disabled.png";
 import * as icon from "./icons/icon.png";
-import { allUrlsRegExp } from "./lib/match-pattern";
+import * as matchPattern from "./lib/match-pattern";
 import { Rule } from "./lib/rule";
 import { defaults, UserOptions } from "./options/defaults";
 
@@ -202,7 +202,7 @@ function checkSourceFileMatches(
 
 // Record the last tab so we're able to populate the add reload rule form.
 function recordTab(tab: browser.tabs.Tab) {
-    if (!tab.incognito && tab.url && tab.url.match(allUrlsRegExp)) {
+    if (!tab.incognito && tab.url && tab.url.match(matchPattern.ALL_URLS_RE)) {
         Object.assign(tabData, tab);
     }
 }

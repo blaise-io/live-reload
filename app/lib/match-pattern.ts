@@ -2,20 +2,20 @@ const schemeSegment = "(\\*|http|https|file|ftp|app)";
 const hostSegment = "(\\*|(?:\\*\\.)?(?:[^/*]+))?";
 const pathSegment = "(.*)";
 
-const matchPatternRegExp = new RegExp(
-    `^${schemeSegment}://${hostSegment}/${pathSegment}$`,
-);
-
-const allUrlsRegExp = new RegExp(
+const ALL_URLS_RE = new RegExp(
     `^${schemeSegment}://`,
 );
 
-function getRegExpForMatchPattern(pattern: string) {
+const MATCH_PATTERN_RE = new RegExp(
+    `^${schemeSegment}://${hostSegment}/${pathSegment}$`,
+);
+
+function toRegExp(pattern: string) {
     if (pattern === "<all_urls>") {
-        return allUrlsRegExp;
+        return ALL_URLS_RE;
     }
 
-    const match = matchPatternRegExp.exec(pattern);
+    const match = MATCH_PATTERN_RE.exec(pattern);
     if (!match) {
         console.error("Invalid pattern", pattern);
         return (/^$/);
@@ -66,7 +66,7 @@ function getRegExpForMatchPattern(pattern: string) {
 }
 
 export {
-    matchPatternRegExp,
-    getRegExpForMatchPattern,
-    allUrlsRegExp,
+    ALL_URLS_RE,
+    MATCH_PATTERN_RE,
+    toRegExp,
 };

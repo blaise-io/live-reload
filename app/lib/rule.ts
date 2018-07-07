@@ -1,4 +1,4 @@
-import { getRegExpForMatchPattern } from "../lib/match-pattern";
+import * as matchPattern from "../lib/match-pattern";
 
 const storage = browser.storage.local;
 
@@ -88,7 +88,7 @@ class Rule {
         public title: string,
         public host: string,
         public sources: string[] = [],
-        public interval = 2,
+        public interval: number = 2,
         public id = Math.random().toString(36).substr(2),
         public created = new Date(),
         public modified = new Date(),
@@ -97,11 +97,11 @@ class Rule {
     ) { }
 
     get hostRegExp(): RegExp {
-        return getRegExpForMatchPattern(this.host);
+        return matchPattern.toRegExp(this.host);
     }
 
     get sourceRegExps(): RegExp[] {
-        return this.sources.map((source) => getRegExpForMatchPattern(source));
+        return this.sources.map((source) => matchPattern.toRegExp(source));
     }
 
     get intervalMs(): number {

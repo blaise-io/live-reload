@@ -21,7 +21,7 @@ const manifest = {
     browser_action: {
         browser_style: false as undefined | boolean,
         default_icon: iconImage,
-        default_popup: "/popup.html"
+        default_popup: "/popup.html",
     },
     options_ui: {
         page: "/options.html",
@@ -32,8 +32,8 @@ const manifest = {
 if (process.env.BROWSER === "firefox") {
     manifest.applications = {
         gecko: {
-            id: `${process.env.npm_package_name}@blaise.io`
-        }
+            id: `${process.env.npm_package_name}@blaise.io`,
+        },
     };
     manifest.options_ui.browser_style = true;
     manifest.browser_action.browser_style = false;

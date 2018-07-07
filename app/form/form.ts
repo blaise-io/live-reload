@@ -1,6 +1,6 @@
-import { matchPatternRegExp } from "../lib/match-pattern";
+import * as dom from "../lib/dom";
+import { MATCH_PATTERN_RE } from "../lib/match-pattern";
 import { Rule } from "../lib/rule";
-import "./extension.css";
 import "./form.css";
 
 const FILESYSTEM_ERROR = `Not saved!
@@ -13,47 +13,39 @@ const FILESYSTEM_ERROR = `Not saved!
     const updateRuleId = matchUpdateRule ? String(matchUpdateRule[1]) : null;
 
     if (updateRuleId) {
+        let rule: Rule | null = null;
         try {
-            const rule = await Rule.get(updateRuleId);
-            const title = document.title;
-            const h2 = document.querySelector("h2.update") as HTMLHeadingElement;
-            populateForm(rule, true, `Update: ${title}`);
-            h2.textContent = title;
+            rule = await Rule.get(updateRuleId);
         } catch (error) {
             alert(error.message);
             window.close();
         }
+        if (rule) {
+            updateRule(rule);
+        }
     } else {
         browser.runtime.sendMessage({ type: "tabData?" });
-        browser.runtime.onMessage.addListener(receiveTabData);
+        browser.runtime.onMessage.addListener(createNewRule);
     }
 })();
 
-function getInput(name: string): HTMLInputElement {
-    return document.querySelector(`[name=${name}]`) as HTMLInputElement;
+function updateRule(rule: Rule) {
+    console.debug("Update rule", rule);
+    const title = `Update: ${rule.title}`;
+    const h2 = document.querySelector("h2.update") as HTMLHeadingElement;
+    h2.textContent = title;
+    populateForm(rule, true, title);
 }
 
-function getValue(name: string): HTMLInputElement["value"] {
-    return getInput(name).value;
-}
-
-function setValue(name: string, value: boolean | number | string) {
-    const input = getInput(name);
-    if (typeof value === "boolean") {
-        input.checked = value;
-    } else {
-        input.value = value.toString();
-    }
-}
-
-// Received last opened/modified tab data.
-function receiveTabData(message: {type: string, tabData: browser.tabs.Tab}) {
+function createNewRule(message: {type: string, tabData: browser.tabs.Tab}) {
     if (message.type === "tabData") {
-        browser.runtime.onMessage.removeListener(receiveTabData);
+        browser.runtime.onMessage.removeListener(createNewRule);
 
         const data = message.tabData || {};
         const title = data.title ? `Reload rule for ${data.title.trim()}` : "";
         const rule = new Rule(title, data.url || "");
+
+        console.debug("New rule", rule);
 
         populateForm(rule, false, "Create a new reload rule");
     }
@@ -63,59 +55,58 @@ function populateForm(rule: Rule, update: boolean, title: string) {
     document.body.classList.add(update ? "update" : "create");
     document.title = title;
 
-    document.forms[0].addEventListener("submit", (event) => {
+    dom.popupMatchContentHeight();
+
+    dom.getInput("host").pattern = MATCH_PATTERN_RE.source;
+
+    dom.setValue("title", rule.title);
+    dom.setValue("host", rule.host);
+    dom.setValue("interval", rule.interval);
+    dom.setValue("inlinecss", rule.inlinecss);
+    dom.setValue("inlineframes", rule.inlineframes);
+    dom.setValue("sources", rule.sources.join("\n\n"));
+
+    document.forms[0].addEventListener("submit", async (event) => {
         event.preventDefault();
-        handleFormSubmit(rule);
+        await handleFormSubmit(rule);
         browser.runtime.sendMessage({ type: "reloadRulesChange" });
         window.alert("Saved!");
         window.close();
     });
-
-    popupMatchContentHeight();
-
-    getInput("host").pattern = matchPatternRegExp.source;
-
-    setValue("title", rule.title);
-    setValue("host", rule.host);
-    setValue("interval", rule.interval);
-    setValue("inlinecss", rule.inlinecss);
-    setValue("inlineframes", rule.inlineframes);
-    setValue("sources", rule.sources.join("\n\n"));
 }
 
-function popupMatchContentHeight() {
-    browser.windows.getCurrent().then((window: browser.windows.Window) => {
-        if (window.id) {
-            browser.windows.update(window.id, {
-                height: document.body.offsetHeight,
-            });
-            document.body.classList.add("loaded");
-        }
-    });
-}
-
-// Form submit handler.
 async function handleFormSubmit(rule: Rule) {
+    const [success, error] = overloadFormData(rule);
+
+    if (!success) {
+        window.alert(error);
+        dom.getInput("sources").focus();
+        return;
+    }
+
+    console.debug("Save rule", rule);
+    await rule.save();
+}
+
+function overloadFormData(rule: Rule): [boolean, string | null] {
     let error: string | null = null;
 
-    rule.interval = Number(getValue("interval"));
+    rule.interval = Number(dom.getValue("interval"));
     rule.modified = new Date();
-    rule.sources = getValue("sources").split(/[\n]+/g).map((s) => s.trim());
+    rule.title = dom.getValue("title");
+    rule.host = dom.getValue("host");
+    rule.inlinecss = Boolean(dom.getInput("inlinecss").checked);
+    rule.inlineframes = Boolean(dom.getInput("inlineframes").checked);
+    rule.sources = dom.getValue("sources").split(/[\n]+/g).map((s) => s.trim());
     rule.sources.forEach((source) => {
         if (!error) {
             if ((/^file:\/\//i).exec(source)) {
                 error = FILESYSTEM_ERROR;
-            } else if (!matchPatternRegExp.exec(source)) {
+            } else if (!MATCH_PATTERN_RE.exec(source)) {
                 error = `Not saved!\n\nInvalid match pattern:\n\n${source}`;
             }
         }
     });
 
-    if (error) {
-        window.alert(error);
-        getInput("sources").focus();
-        return;
-    }
-
-    await rule.save();
+    return [error === null, error];
 }
