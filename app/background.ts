@@ -19,7 +19,7 @@ const registry: Record<number, IFileRecord> = {};
 const options: UserOptions = {};
 const rules: Rule[] = [];
 
-enum SourceType {
+const enum SourceType {
     HOST = "HOST",
     CSS = "CSS",
     JS = "JS",
@@ -55,7 +55,8 @@ browser.tabs.onRemoved.addListener((tabId) => {
 });
 
 // Pick up on messages.
-browser.runtime.onMessage.addListener((message, sender) => {
+browser.runtime.onMessage.addListener(async (message, sender) => {
+    console.info("Incoming message", message, sender);
     switch (message.type) {
         case "isMonitoring?":
             browser.runtime.sendMessage({ type: "isMonitoring", isMonitoring });
@@ -78,6 +79,7 @@ browser.runtime.onMessage.addListener((message, sender) => {
             }
             break;
     }
+    await true;
 });
 
 // Record tab when tab URL changes.
@@ -111,14 +113,20 @@ function toggleAddonEnabled(enabled: boolean) {
 }
 
 async function monitorTabIfEligible(tab: browser.tabs.Tab) {
+    console.debug("Monitor tab if eligible:", tab.id, tab.title);
     for (const rule of rules) {
         // Host matches pattern, start monitoring.
         if (tab.id && tab.url && tab.url.match(rule.hostRegExp)) {
-            // Chrome et al need browser polyfill first.
+
+            // Chrome et al need the browser polyfill to be loaded first.
             if (process.env.BROWSER !== "firefox") {
-                const file = browser.extension.getURL("/polyfill.js");
+                // Don't use browser.extension.getURL() here, breaks Chrome.
+                console.debug("Inject polyfill");
+                const file = "/polyfill.js";
                 await browser.tabs.executeScript(tab.id as number, {file});
             }
+
+            console.debug("Inject send source files");
             const code = `(${injectSendSourceFiles.toString()})("${rule.id}");`;
             browser.tabs.executeScript(tab.id, { code });
             // Flow continues at case "pageSourceFiles".
@@ -126,6 +134,10 @@ async function monitorTabIfEligible(tab: browser.tabs.Tab) {
     }
 }
 
+/**
+ * Send source file data from the host page to pageSourceFilesReceived().
+ * Injected into the host page.
+ */
 function injectSendSourceFiles(rule: Rule) {
     const css: HTMLLinkElement[] = Array.from(
         document.querySelectorAll("link[rel=stylesheet]"),
@@ -144,22 +156,27 @@ function injectSendSourceFiles(rule: Rule) {
     }});
 }
 
+/**
+ * Replace inline frames and stylesheet includes.
+ * Injected into the host page.
+ */
 function injectInlineReload(type: SourceType, url: string, updateUrl: string) {
-    let selector: null | string = null;
-    let urlProperty: null | string = null;
-    switch (type) {
-        case SourceType.CSS:
-            selector = "link[rel=stylesheet]";
-            urlProperty = "href";
-        case SourceType.FRAME:
-            selector = "iframe[src]";
-            urlProperty = "src";
-    }
-
-    if (selector && urlProperty) {
-        Array.from(document.querySelectorAll(selector)).forEach((el) => {
-            if (el.getAttribute(urlProperty as string) === url) {
-                el.setAttribute(urlProperty as string, updateUrl);
+    if (type === SourceType.CSS) {
+        const styles: HTMLLinkElement[] = Array.from(
+            document.querySelectorAll("link[rel=stylesheet]"),
+        );
+        styles.forEach((element) => {
+            if (element.href === url) {
+                element.href = updateUrl;
+            }
+        });
+    } else if (type === SourceType.FRAME) {
+        const frames: HTMLFrameElement[] = Array.from(
+            document.querySelectorAll("iframe[src]"),
+        );
+        frames.forEach((element) => {
+            if (element.src === url) {
+                element.src = updateUrl;
             }
         });
     }
@@ -234,8 +251,6 @@ function setBadge(tabId: number, count: number | null) {
         browser.browserAction.setBadgeText({ text: "", tabId });
     }
 }
-
-// import {TabStatus, WindowType} from "@types/firefox-webext-browser/index.d";
 
 async function continueMonitoring() {
     const tabs = await browser.tabs.query({

@@ -37,7 +37,7 @@ function updateRule(rule: Rule) {
     populateForm(rule, true, title);
 }
 
-function createNewRule(message: {type: string, tabData: browser.tabs.Tab}) {
+async function createNewRule(message: {type: string, tabData: browser.tabs.Tab}) {
     if (message.type === "tabData") {
         browser.runtime.onMessage.removeListener(createNewRule);
 
@@ -49,6 +49,7 @@ function createNewRule(message: {type: string, tabData: browser.tabs.Tab}) {
 
         populateForm(rule, false, "Create a new reload rule");
     }
+    await true;
 }
 
 function populateForm(rule: Rule, update: boolean, title: string) {

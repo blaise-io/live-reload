@@ -6,13 +6,15 @@ import { resolve } from "path";
 import * as webpack from "webpack";
 import * as ZipPlugin from "zip-webpack-plugin";
 
+const REQUIRE_POLYFILL = process.env.BROWSER !== "firefox";
+
 function polyfillChunks(...chunks: string[]): string[] {
-    return process.env.BROWSER === "firefox" ? chunks : ["polyfill", ...chunks];
+    return REQUIRE_POLYFILL ? ["polyfill"].concat(...chunks) : chunks;
 }
 
 const config: webpack.Configuration = {
     entry: {
-        polyfill: "webextension-polyfill",
+        polyfill: resolve(__dirname, "app/polyfill.ts"),
         background: resolve(__dirname, "app/background.ts"),
         form: resolve(__dirname, "app/form/form.ts"),
         manifest: resolve(__dirname, "app/manifest.ts"),
@@ -90,11 +92,9 @@ const config: webpack.Configuration = {
         }),
         ...(process.argv.includes("--run-prod") ? [
             new ZipPlugin({
-                exclude: [
-                    "manifest.js", ...(
-                        process.env.BROWSER === "firefox" ? [/polyfill\.js/] : []
-                    ),
-                ],
+                exclude: [/manifest\.js/].concat(
+                    ...(REQUIRE_POLYFILL ? [] : [/polyfill\.js/]),
+                ),
                 filename: [
                     process.env.npm_package_name,
                     process.env.npm_package_version,

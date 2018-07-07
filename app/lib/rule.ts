@@ -22,8 +22,10 @@ enum StorageType {
 class Rule {
 
     public static async query(): Promise<Rule[]> {
-        const allData = await storage.get();
+        const allData = await storage.get(undefined);
         const rules: Rule[] = [];
+
+        console.debug("Storage data", allData);
 
         // Convert old format to new.
         // TODO: Remove in next minor release.
@@ -48,6 +50,7 @@ class Rule {
             }
         });
 
+        console.debug("Rules", rules);
         return rules;
     }
 
@@ -61,6 +64,7 @@ class Rule {
     }
 
     public static async delete(id: Rule["id"]) {
+        console.debug("Delete rule", id);
         try {
             if (id) {
                 await storage.remove(id);

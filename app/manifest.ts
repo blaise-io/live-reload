@@ -27,6 +27,7 @@ const manifest = {
         page: "/options.html",
         browser_style: undefined as undefined | boolean,
     },
+    web_accessible_resources: undefined as undefined | string[],
 };
 
 if (process.env.BROWSER === "firefox") {
@@ -37,6 +38,9 @@ if (process.env.BROWSER === "firefox") {
     };
     manifest.options_ui.browser_style = true;
     manifest.browser_action.browser_style = false;
+} else {
+    manifest.background.scripts.unshift("/polyfill.js");
+    manifest.web_accessible_resources = ["/polyfill.js"];
 }
 
 module.exports = JSON.stringify(manifest, null, 2);

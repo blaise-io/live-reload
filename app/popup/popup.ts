@@ -13,17 +13,22 @@ const enabledElement = document.querySelector(".addon-enabled") as HTMLElement;
 const disabledElement = document.querySelector(".addon-disabled") as HTMLElement;
 
 // Fetch reload rules from storage.
-Rule.query().then(setReloadRules);
+(async () => {
+    const rules = await Rule.query();
+    console.debug("Rules x", rules);
+    setReloadRules(rules);
+})();
 
 // Fetch Addon active from background.js.
 browser.runtime.sendMessage({type: "isMonitoring?"});
-browser.runtime.onMessage.addListener((message) => {
+browser.runtime.onMessage.addListener(async (message) => {
     switch (message.type) {
         case "isMonitoring":
             isMonitoring = message.isMonitoring;
             updatePopupUI();
             break;
     }
+    await true;
 });
 
 // Handle clicks on enabled/disabled state.
