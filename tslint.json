@@ -1,0 +1,9 @@
+{
+  "defaultSeverity": "warn",
+  "extends": ["tslint:latest"],
+  "rules": {
+    "interface-name": false,
+    "no-console": [true, "log"],
+    "object-literal-sort-keys": false
+  }
+}

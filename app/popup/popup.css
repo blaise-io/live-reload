@@ -1,3 +1,5 @@
+@import "../lib/extension.css";
+
 html,
 body {
     margin: 0;
@@ -58,6 +60,10 @@ body {
     .split .panel-list-item.rule {
         width: 100%;
         overflow: hidden;
+    }
+    .split .panel-list-item.confirm-delete {
+        flex-grow: 10;
+        color: inherit;
     }
     .split .options {
         border-left: 1px solid rgba(0, 0, 0, 0.2) !important;
