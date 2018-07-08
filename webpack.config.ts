@@ -9,7 +9,7 @@ import * as ZipPlugin from "zip-webpack-plugin";
 const REQUIRE_POLYFILL = process.env.BROWSER !== "firefox";
 
 function polyfillChunks(...chunks: string[]): string[] {
-    return REQUIRE_POLYFILL ? ["polyfill"].concat(...chunks) : chunks;
+    return REQUIRE_POLYFILL ? ["polyfill", ...chunks] : chunks;
 }
 
 const config: webpack.Configuration = {
@@ -92,9 +92,10 @@ const config: webpack.Configuration = {
         }),
         ...(process.argv.includes("--run-prod") ? [
             new ZipPlugin({
-                exclude: [/manifest\.js/].concat(
-                    ...(REQUIRE_POLYFILL ? [] : [/polyfill\.js/]),
-                ),
+                exclude: [
+                    /manifest\.(js|js\.map)$/,
+                    ...(REQUIRE_POLYFILL ? [] : [/polyfill\.(js|js\.map)$/]),
+                ],
                 filename: [
                     process.env.npm_package_name,
                     process.env.npm_package_version,
