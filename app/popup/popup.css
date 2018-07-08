@@ -61,6 +61,10 @@ body {
         width: 100%;
         overflow: hidden;
     }
+    .split .panel-list-item.confirm-delete {
+        flex-grow: 10;
+        color: inherit;
+    }
     .split .options {
         border-left: 1px solid rgba(0, 0, 0, 0.2) !important;
         padding: 0 6px;

@@ -142,6 +142,10 @@ textarea.browser-style:focus:hover {
   color: #999;
 }
 
+.text-delete {
+    color: red;
+}
+
 .panel-list-item > .icon {
   flex-grow: 0;
   flex-shrink: 0;
@@ -169,12 +173,23 @@ textarea.browser-style:focus:hover {
   padding: 0;
 }
 
+.chrome .panel-section-footer {
+    font-weight: bold;
+    background: none;
+    height: auto;
+    padding: 4px 0;
+}
+
 .panel-section-footer-button {
   flex: 1 1 auto;
   height: 100%;
   margin: 0 -1px;
   padding: 12px;
   text-align: center;
+}
+
+.chrome .panel-section-footer-button {
+    padding: 4px 16px;
 }
 
 .panel-section-footer-button:hover {

@@ -12,10 +12,12 @@ const template = document.querySelector("#reload-rule") as HTMLTemplateElement;
 const enabledElement = document.querySelector(".addon-enabled") as HTMLElement;
 const disabledElement = document.querySelector(".addon-disabled") as HTMLElement;
 
+// Add browser name to document element.
+document.documentElement.classList.add(process.env.BROWSER as string);
+
 // Fetch reload rules from storage.
 (async () => {
     const rules = await Rule.query();
-    console.debug("Rules x", rules);
     setReloadRules(rules);
 })();
 
