@@ -15,17 +15,23 @@ function setValue(name: string, value: boolean | number | string) {
     }
 }
 
-function popupMatchContentHeight() {
-    browser.windows.getCurrent().then((window: browser.windows.Window) => {
-        if (window.id) {
-            browser.windows.update(window.id, {
-                height: document.body.offsetHeight,
-            });
-            document.body.classList.add("loaded");
-        }
+async function popupMatchContentHeight() {
+    const window = await browser.windows.getCurrent();
+    browser.windows.update(window.id as number, {
+        height: document.body.offsetHeight,
     });
+    document.body.classList.add("loaded");
+}
+
+async function closeWindow() {
+    const window = await browser.windows.getCurrent();
+    browser.windows.remove(window.id as number);
 }
 
 export {
-    getInput, getValue, setValue, popupMatchContentHeight
+    closeWindow,
+    getInput,
+    getValue,
+    setValue,
+    popupMatchContentHeight,
 };

@@ -7,6 +7,7 @@
     "webpack": "webpack --devtool source-map --require ts-node/register --config webpack.config.ts"
   },
   "scripts": {
+    "lint": "tslint -p . --fix",
     "tag": "git tag $npm_package_version && git push origin $npm_package_version",
     "test.page": "supervisor -w test/* test/test.js",
     "test.browser": "open http://127.0.0.1:3000",

@@ -3,21 +3,7 @@
   "extends": ["tslint:latest"],
   "rules": {
     "interface-name": false,
-    "no-any": true,
     "no-console": [true, "log"],
-    "object-literal-sort-keys": false,
-    "semicolon": [true, "always"],
-    "trailing-comma": [
-      true,
-      {
-        "esSpecCompliant": true,
-        "multiline": {
-          "objects": "always",
-          "arrays": "always",
-          "functions": "always",
-          "typeLiterals": "always"
-        }
-      }
-    ]
+    "object-literal-sort-keys": false
   }
 }

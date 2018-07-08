@@ -71,8 +71,8 @@ function populateForm(rule: Rule, update: boolean, title: string) {
         event.preventDefault();
         await handleFormSubmit(rule);
         browser.runtime.sendMessage({ type: "reloadRulesChange" });
-        window.alert("Saved!");
-        window.close();
+        window.alert(`Saved: ${rule.title}`);
+        dom.closeWindow();
     });
 }
 
