@@ -1,6 +1,6 @@
 {
   "name": "live-reload",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "Monitors source files on a page. Reloads the page or just the changed stylesheet when source files are updated.",
   "main": "npm run build",
   "config": {
@@ -19,14 +19,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/blaise-io/media-carousel.git"
+    "url": "git+https://github.com/blaise-io/live-reload.git"
   },
   "author": "Blaise Kal <blaisekal@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/blaise-io/media-carousel/issues"
+    "url": "https://github.com/blaise-io/live-reload/issues"
   },
-  "homepage": "https://github.com/blaise-io/media-carousel#readme",
+  "homepage": "https://github.com/blaise-io/live-reload#readme",
   "dependencies": {
     "@types/clean-webpack-plugin": "0.1.2",
     "@types/extract-text-webpack-plugin": "3.0.3",
