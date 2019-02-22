@@ -42,14 +42,23 @@
             <strong>Specify the URLs for the scripts, stylesheets and/or frames you want to monitor on the host.</strong>
             Enter absolute URLs including scheme and host name.
             Separate multiple URLs with a line break.
-            This field also supports match patterns.
         </div>
         <div class="form-row browser-style">
             <label for="sources">Source file URLs</label>
             <textarea required
                       name="sources"
                       id="sources"
-                      placeholder="https://example.org/src/*.js"
+                      placeholder="https://example.org/*.js"
+                      class="code browser-style"></textarea>
+        </div>
+        <div class="form-row help">
+            <strong>Optional.</strong> Source file URLs matching the URLs below will not be monitored.
+        </div>
+        <div class="form-row browser-style">
+            <label for="sources">Ignore source file URLs</label>
+            <textarea name="ignores"
+                      id="ignores"
+                      placeholder="https://example.org/vendor/*.js"
                       class="code browser-style"></textarea>
         </div>
         <div class="form-row browser-style">

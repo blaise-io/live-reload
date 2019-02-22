@@ -8,6 +8,7 @@ interface IStorageRule {
     title: string;
     host: string;
     sources: string[];
+    ignores: string[];
     interval: number;
     inlinecss: boolean;
     inlineframes: boolean;
@@ -26,23 +27,6 @@ class Rule {
         const rules: Rule[] = [];
 
         console.debug("Storage data", allData);
-
-        // Convert old format to new.
-        // TODO: Remove in next minor release.
-        if (allData.rules) {
-            console.debug("Converting old rules to new format");
-            const oldRules = allData.rules as IStorageRule[];
-            try {
-                for (const ruleObj of oldRules) {
-                    const rule = await Rule.fromStorage(ruleObj).save();
-                    rules.push(rule);
-                }
-            } catch (error) {
-                console.error("Error converting old format to new", error);
-            }
-            storage.remove("rules");
-            return rules;
-        }
 
         Object.entries(allData as IStorageRule[]).forEach(([_, data]) => {
             if (data._type === StorageType.Rule) {
@@ -79,6 +63,7 @@ class Rule {
             storageRule.title,
             storageRule.host,
             storageRule.sources,
+            storageRule.ignores,
             storageRule.interval,
             storageRule.id,
             new Date(storageRule.created),
@@ -92,6 +77,7 @@ class Rule {
         public title: string,
         public host: string,
         public sources: string[] = [],
+        public ignores: string[] = [],
         public interval: number = 2,
         public id = Math.random().toString(36).substr(2),
         public created = new Date(),
@@ -108,6 +94,10 @@ class Rule {
         return this.sources.map((source) => matchPattern.toRegExp(source));
     }
 
+    get ignoresRegExps(): RegExp[] {
+        return this.ignores.map((ignore) => matchPattern.toRegExp(ignore));
+    }
+
     get intervalMs(): number {
         return this.interval * 1000;
     }
@@ -119,6 +109,7 @@ class Rule {
             title: this.title,
             host: this.host,
             sources: this.sources,
+            ignores: this.ignores,
             interval: this.interval,
             inlinecss: this.inlinecss,
             inlineframes: this.inlineframes,

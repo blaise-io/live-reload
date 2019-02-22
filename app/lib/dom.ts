@@ -18,7 +18,7 @@ function setValue(name: string, value: boolean | number | string) {
 async function popupMatchContentHeight() {
     const window = await browser.windows.getCurrent();
     browser.windows.update(window.id as number, {
-        height: document.body.offsetHeight,
+        height: document.documentElement.offsetHeight + 20,
     });
     document.body.classList.add("loaded");
 }

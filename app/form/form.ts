@@ -65,7 +65,8 @@ function populateForm(rule: Rule, update: boolean, title: string) {
     dom.setValue("interval", rule.interval);
     dom.setValue("inlinecss", rule.inlinecss);
     dom.setValue("inlineframes", rule.inlineframes);
-    dom.setValue("sources", rule.sources.join("\n\n"));
+    dom.setValue("sources", rule.sources.join("\n"));
+    dom.setValue("ignores", rule.ignores.join("\n"));
 
     document.forms[0].addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -99,8 +100,10 @@ function overloadFormData(rule: Rule): [boolean, string | null] {
     rule.inlinecss = Boolean(dom.getInput("inlinecss").checked);
     rule.inlineframes = Boolean(dom.getInput("inlineframes").checked);
     rule.sources = dom.getValue("sources").split(/[\n]+/g).map((s) => s.trim());
-    rule.sources.forEach((source) => {
-        if (!error) {
+    rule.ignores = dom.getValue("ignores").split(/[\n]+/g).map((s) => s.trim());
+
+    [...rule.sources, ...rule.ignores].forEach((source) => {
+        if (!error && source.trim()) {
             if ((/^file:\/\//i).exec(source)) {
                 error = FILESYSTEM_ERROR;
             } else if (!MATCH_PATTERN_RE.exec(source)) {

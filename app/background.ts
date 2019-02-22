@@ -206,6 +206,13 @@ function pageSourceFilesReceived(
     }
 }
 
+function anyRuleMatch(regExps: RegExp[], urlNoCache: string): boolean {
+    return regExps.reduce(
+        (prev, regExp) => prev || regExp.test(urlNoCache),
+        false,
+    );
+}
+
 function checkSourceFileMatches(
     files: Record<SourceType, string[]>,
     rule: Rule,
@@ -213,11 +220,13 @@ function checkSourceFileMatches(
 ) {
     Object.entries(files).forEach(([type, filesOfType]) => {
         (filesOfType as string[]).forEach((url) => {
-            rule.sourceRegExps.forEach((regExp) => {
-                if (regExp.test(stripNoCacheParam(url))) {
-                    checkSourceFileChanged(tab, rule, url, type as SourceType);
-                }
-            });
+            const urlNoCache = stripNoCacheParam(url);
+            if (
+                anyRuleMatch(rule.sourceRegExps, urlNoCache) &&
+                !anyRuleMatch(rule.ignoresRegExps, urlNoCache)
+            ) {
+                checkSourceFileChanged(tab, rule, url, type as SourceType);
+            }
         });
     });
 }

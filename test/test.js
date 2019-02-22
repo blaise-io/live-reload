@@ -1,6 +1,6 @@
 /**
- * Run the test server using `npm start`.
- * Open test page using `npm run browser`.
+ * Run the test server using `npm run test.page`.
+ * Open test page using `npm run test.browser`.
  */
 
 /* eslint-env node */
@@ -12,24 +12,24 @@ const frameUrl = '/pages/frame.html';
 const scriptUrl = '/static/abc/def/script.js';
 const styleUrl = '/static/abc/def/style.css';
 const baseStyle = `
-    body { 
-        font: 18px/24px monospace; 
-        width: 400px; 
-        padding: 0; 
-        margin: 0 auto; 
+    body {
+        font: 18px/24px monospace;
+        width: 400px;
+        padding: 0;
+        margin: 0 auto;
     }
-    iframe { 
-        margin: 5em 0 0; 
-        height: 18px; 
-        width: 100%; 
-        border: none; 
+    iframe {
+        margin: 5em 0 0;
+        height: 18px;
+        width: 100%;
+        border: none;
     }
-    pre { 
-        min-height: 5em; 
-        margin: 0 0 2em; 
+    pre {
+        min-height: 5em;
+        margin: 0 0 2em;
     }
-    pre::after { 
-        display: block; 
+    pre::after {
+        display: block;
     }
 `;
 

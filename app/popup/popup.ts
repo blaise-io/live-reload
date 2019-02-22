@@ -91,8 +91,8 @@ document.body.addEventListener("click", (event) => {
         browser.windows.create({
             url,
             type: "popup" as browser.windows.CreateType.popup,
-            width: 410,
-            height: 700,
+            width: 450,
+            height: 750,
             left: event.screenX - 390,
             top: event.screenY - 20,
         });

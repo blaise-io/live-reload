@@ -1,6 +1,6 @@
 {
   "name": "live-reload",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "description": "Monitors source files on a page. Reloads the page or just the changed stylesheet when source files are updated.",
   "main": "npm run build",
   "config": {

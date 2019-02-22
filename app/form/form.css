@@ -80,7 +80,7 @@ h2.form-row {
         margin: 0 5px;
     }
     .form-row textarea {
-        height: 100px;
+        height: 70px;
         line-height: inherit;
         resize: vertical;
         white-space: pre;
@@ -91,7 +91,7 @@ h2.form-row {
         margin: 2px 0 0;
     }
     .form-row .code {
-        font-size: 0.9em;
+        font-size: 0.8em;
     }
     a {
         color: inherit;
