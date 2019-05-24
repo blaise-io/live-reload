@@ -45,7 +45,7 @@ browser.storage.local.get("isMonitoring").then((result) => {
 browser.tabs.onUpdated.addListener((_, __, tab) => {
     if (isMonitoring && tab.status === "complete" && tab.id) {
         disableTabMonitoring(tab.id);
-        monitorTabIfEligible(tab);
+        monitorTabIfRuleMatch(tab);
     }
 });
 
@@ -56,7 +56,7 @@ browser.tabs.onRemoved.addListener((tabId) => {
 
 // Pick up on messages.
 browser.runtime.onMessage.addListener(async (message, sender) => {
-    console.info("Incoming message", message, sender);
+    console.info("Incoming message from ", sender.url, message);
     switch (message.type) {
         case "isMonitoring?":
             browser.runtime.sendMessage({ type: "isMonitoring", isMonitoring });
@@ -112,11 +112,11 @@ function toggleAddonEnabled(enabled: boolean) {
     browser.browserAction.setTitle({ title });
 }
 
-async function monitorTabIfEligible(tab: browser.tabs.Tab) {
-    console.debug("Monitor tab if eligible:", tab.id, tab.title);
+async function monitorTabIfRuleMatch(tab: browser.tabs.Tab) {
     for (const rule of rules) {
         // Host matches pattern, start monitoring.
         if (tab.id && tab.url && tab.url.match(rule.hostRegExp)) {
+            console.debug("Host pattern", rule.hostRegExp, "matches", tab.url);
 
             // Chrome et al need the browser polyfill to be loaded first.
             if (process.env.BROWSER !== "firefox") {
@@ -183,6 +183,7 @@ function injectInlineReload(type: SourceType, url: string, updateUrl: string) {
 }
 
 async function updateRulesFromStorage() {
+    console.debug("Update rules from storage");
     const storageRules = await Rule.query();
     rules.length = 0;  // Truncate, but keep reference.
     rules.push(...storageRules);
@@ -207,10 +208,12 @@ function pageSourceFilesReceived(
 }
 
 function anyRuleMatch(regExps: RegExp[], urlNoCache: string): boolean {
-    return regExps.reduce(
-        (prev, regExp) => prev || regExp.test(urlNoCache),
-        false,
-    );
+    const regexp = regExps.find((regExp) => regExp.test(urlNoCache));
+    if (regexp) {
+        console.debug("Source pattern", regexp, "matches", urlNoCache);
+        return true;
+    }
+    return false;
 }
 
 function checkSourceFileMatches(
@@ -239,6 +242,7 @@ function recordTab(tab: browser.tabs.Tab) {
 }
 
 function disableAllMonitoring() {
+    console.debug("Disable monitoring");
     Object.keys(registry).forEach((tabId) => {
         disableTabMonitoring(Number(tabId));
     });
@@ -248,7 +252,7 @@ function disableTabMonitoring(tabId: number) {
     setBadge(Number(tabId), null);
     Object.values(registry[tabId] || {}).forEach((fileRegistry) => {
         clearTimeout(fileRegistry.timer);
-        delete (registry[tabId]);
+        delete registry[tabId];
     });
 }
 
@@ -262,13 +266,12 @@ function setBadge(tabId: number, count: number | null) {
 }
 
 async function continueMonitoring() {
+    console.debug("Continue monitoring");
     const tabs = await browser.tabs.query({
-        status: "complete" as browser.tabs.TabStatus.complete,
-        windowType: "normal" as browser.tabs.WindowType.normal,
+        status: "complete",
+        windowType: "normal",
     });
-    tabs.forEach((tab) => {
-        monitorTabIfEligible(tab);
-    });
+    tabs.forEach(monitorTabIfRuleMatch);
 }
 
 async function checkSourceFileChanged(
@@ -278,6 +281,10 @@ async function checkSourceFileChanged(
     type: SourceType,
 ) {
     let hash;
+
+    if (!isMonitoring) {
+        return;
+    }
 
     tab.id = tab.id || 0;
     const tabRegistry = registry[tab.id] = registry[tab.id] || {};
@@ -293,19 +300,20 @@ async function checkSourceFileChanged(
 
     // Check whether the source file hash has changed.
     if (hash && fileRegistry.hash && fileRegistry.hash !== hash) {
+        console.debug("File changed", url);
         if (
             (type === SourceType.CSS && rule.inlinecss) ||
             (type === SourceType.FRAME && rule.inlineframes)
         ) {
-            // Inline reload:
-            delete (tabRegistry[url]);
+            console.debug("Reload inline");
+            delete tabRegistry[url];
             const source = injectInlineReload.toString();
             const noCacheUrl = getNoCacheURL(url);
             const code = `(${source})("${type}", "${url}", "${noCacheUrl}");`;
             browser.tabs.executeScript(tab.id, { code });
             checkSourceFileChanged(tab, rule, noCacheUrl, type);
         } else {
-            // Page reload:
+            console.debug("Reload page");
             browser.tabs.reload(tab.id);
             disableTabMonitoring(tab.id);
         }

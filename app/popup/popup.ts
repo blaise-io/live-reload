@@ -90,7 +90,7 @@ document.body.addEventListener("click", (event) => {
         const url = browser.extension.getURL(href);
         browser.windows.create({
             url,
-            type: "popup" as browser.windows.CreateType.popup,
+            type: "popup",
             width: 450,
             height: 750,
             left: event.screenX - 390,

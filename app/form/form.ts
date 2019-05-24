@@ -100,7 +100,8 @@ function overloadFormData(rule: Rule): [boolean, string | null] {
     rule.inlinecss = Boolean(dom.getInput("inlinecss").checked);
     rule.inlineframes = Boolean(dom.getInput("inlineframes").checked);
     rule.sources = dom.getValue("sources").split(/[\n]+/g).map((s) => s.trim());
-    rule.ignores = dom.getValue("ignores").split(/[\n]+/g).map((s) => s.trim());
+    rule.ignores = dom.getValue("ignores") ?
+        dom.getValue("ignores").split(/[\n]+/g).map((s) => s.trim()) : [];
 
     [...rule.sources, ...rule.ignores].forEach((source) => {
         if (!error && source.trim()) {

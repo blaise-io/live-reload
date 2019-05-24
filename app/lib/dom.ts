@@ -3,7 +3,7 @@ function getInput(name: string): HTMLInputElement {
 }
 
 function getValue(name: string): HTMLInputElement["value"] {
-    return getInput(name).value;
+    return getInput(name).value.trim();
 }
 
 function setValue(name: string, value: boolean | number | string) {
