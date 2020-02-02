@@ -1,8 +1,9 @@
 import * as iconDisabled from "./icons/icon-disabled.png";
 import * as icon from "./icons/icon.png";
+import * as inject from "./inject";
 import * as matchPattern from "./lib/match-pattern";
-import { Rule } from "./lib/rule";
-import { defaults, UserOptions } from "./options/defaults";
+import {Rule} from "./lib/rule";
+import {defaults, UserOptions} from "./options/defaults";
 
 let isMonitoring: boolean = true;
 
@@ -18,13 +19,6 @@ const tabData = {};
 const registry: Record<number, IFileRecord> = {};
 const options: UserOptions = {};
 const rules: Rule[] = [];
-
-const enum SourceType {
-    HOST = "HOST",
-    CSS = "CSS",
-    JS = "JS",
-    FRAME = "FRAME",
-}
 
 (async () => {
     const optionsResult = await browser.storage.local.get("options");
@@ -127,58 +121,10 @@ async function monitorTabIfRuleMatch(tab: browser.tabs.Tab) {
             }
 
             console.debug("Inject send source files");
-            const code = `(${injectSendSourceFiles.toString()})("${rule.id}");`;
+            const code = `(${inject.sendSourceFiles.toString()})("${rule.id}");`;
             browser.tabs.executeScript(tab.id, { code });
             // Flow continues at case "pageSourceFiles".
         }
-    }
-}
-
-/**
- * Send source file data from the host page to pageSourceFilesReceived().
- * Injected into the host page.
- */
-function injectSendSourceFiles(rule: Rule) {
-    const css: HTMLLinkElement[] = Array.from(
-        document.querySelectorAll("link[rel=stylesheet]"),
-    );
-    const js: HTMLScriptElement[] = Array.from(
-        document.querySelectorAll("script[src]"),
-    );
-    const frames: HTMLIFrameElement[] = Array.from(
-        document.querySelectorAll("iframe[src]"),
-    );
-    browser.runtime.sendMessage({ type: "pageSourceFiles", rule, files: {
-        [SourceType.HOST]: [location.href],
-        [SourceType.CSS]: css.map((element) => element.href),
-        [SourceType.JS]: js.map((element) => element.src),
-        [SourceType.FRAME]: frames.map((element) => element.src),
-    }});
-}
-
-/**
- * Replace inline frames and stylesheet includes.
- * Injected into the host page.
- */
-function injectInlineReload(type: SourceType, url: string, updateUrl: string) {
-    if (type === SourceType.CSS) {
-        const styles: HTMLLinkElement[] = Array.from(
-            document.querySelectorAll("link[rel=stylesheet]"),
-        );
-        styles.forEach((element) => {
-            if (element.href === url) {
-                element.href = updateUrl;
-            }
-        });
-    } else if (type === SourceType.FRAME) {
-        const frames: HTMLFrameElement[] = Array.from(
-            document.querySelectorAll("iframe[src]"),
-        );
-        frames.forEach((element) => {
-            if (element.src === url) {
-                element.src = updateUrl;
-            }
-        });
     }
 }
 
@@ -197,7 +143,7 @@ function restart() {
 }
 
 function pageSourceFilesReceived(
-    files: Record<SourceType, string[]>,
+    files: Record<inject.SourceType, string[]>,
     ruleId: Rule["id"],
     tab: browser.tabs.Tab,
 ) {
@@ -217,7 +163,7 @@ function anyRuleMatch(regExps: RegExp[], urlNoCache: string): boolean {
 }
 
 function checkSourceFileMatches(
-    files: Record<SourceType, string[]>,
+    files: Record<inject.SourceType, string[]>,
     rule: Rule,
     tab: browser.tabs.Tab,
 ) {
@@ -228,7 +174,7 @@ function checkSourceFileMatches(
                 anyRuleMatch(rule.sourceRegExps, urlNoCache) &&
                 !anyRuleMatch(rule.ignoresRegExps, urlNoCache)
             ) {
-                checkSourceFileChanged(tab, rule, url, type as SourceType);
+                checkSourceFileChanged(tab, rule, url, type as inject.SourceType);
             }
         });
     });
@@ -278,7 +224,7 @@ async function checkSourceFileChanged(
     tab: browser.tabs.Tab,
     rule: Rule,
     url: string,
-    type: SourceType,
+    type: inject.SourceType,
 ) {
     let hash;
 
@@ -302,12 +248,12 @@ async function checkSourceFileChanged(
     if (hash && fileRegistry.hash && fileRegistry.hash !== hash) {
         console.debug("File changed", url);
         if (
-            (type === SourceType.CSS && rule.inlinecss) ||
-            (type === SourceType.FRAME && rule.inlineframes)
+            (type === inject.SourceType.CSS && rule.inlinecss) ||
+            (type === inject.SourceType.FRAME && rule.inlineframes)
         ) {
             console.debug("Reload inline");
             delete tabRegistry[url];
-            const source = injectInlineReload.toString();
+            const source = inject.inlineReload.toString();
             const noCacheUrl = getNoCacheURL(url);
             const code = `(${source})("${type}", "${url}", "${noCacheUrl}");`;
             browser.tabs.executeScript(tab.id, { code });
