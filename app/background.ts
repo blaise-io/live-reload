@@ -2,50 +2,50 @@ import * as iconDisabled from "./icons/icon-disabled.png";
 import * as icon from "./icons/icon.png";
 import * as inject from "./inject";
 import * as matchPattern from "./lib/match-pattern";
-import {Rule} from "./lib/rule";
-import {defaults, UserOptions} from "./options/defaults";
+import { Rule } from "./lib/rule";
+import { defaults, UserOptions } from "./options/defaults";
 
 let isMonitoring: boolean = true;
 
-interface IFileProperties {
+interface FileRegistry {
     timer?: number;
     hash?: string;
 }
 
-interface IFileRecord extends Record<string, IFileProperties> {}
+interface TabRegistry extends Record<string, FileRegistry> {
+}
 
-const NO_CACHE_PARAM = "X-LR-NOCACHE";
 const tabData = {};
-const registry: Record<number, IFileRecord> = {};
+const registry: Record<number, TabRegistry> = {};
 const options: UserOptions = {};
 const rules: Rule[] = [];
+
+const webRequestListeners: Record<number, any> = {};  // TODO: Typing
 
 (async () => {
     const optionsResult = await browser.storage.local.get("options");
     const userOptions = "options" in optionsResult ? optionsResult.options : {};
     Object.assign(options, defaults, userOptions);
-    updateRulesFromStorage();
+    await updateRulesFromStorage();
 })();
 
 // Fetch active state.
-browser.storage.local.get("isMonitoring").then((result) => {
-    toggleAddonEnabled(
-        !("isMonitoring" in result) || result.isMonitoring,
-    );
+browser.storage.local.get("isMonitoring").then(async (result) => {
+    await toggleAddonEnabled(!("isMonitoring" in result) || result.isMonitoring);
 });
 
 // Whenever a page in a tab is done loading, check whether the page
 // requires any source file monitoring.
-browser.tabs.onUpdated.addListener((_, __, tab) => {
-    if (isMonitoring && tab.status === "complete" && tab.id) {
-        disableTabMonitoring(tab.id);
+browser.tabs.onUpdated.addListener(async (_, __, tab) => {
+    if (isMonitoring && tab.status === "loading" && tab.id) {
+        await disableTabMonitoring(tab.id);
         monitorTabIfRuleMatch(tab);
     }
 });
 
 // Stop monitoring and delete from registry  when a tab closes.
-browser.tabs.onRemoved.addListener((tabId) => {
-    disableTabMonitoring(tabId);
+browser.tabs.onRemoved.addListener(async (tabId) => {
+    await disableTabMonitoring(tabId);
 });
 
 // Pick up on messages.
@@ -53,27 +53,21 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     console.info("Incoming message from ", sender.url, message);
     switch (message.type) {
         case "isMonitoring?":
-            browser.runtime.sendMessage({ type: "isMonitoring", isMonitoring });
+            await browser.runtime.sendMessage({type: "isMonitoring", isMonitoring});
             break;
         case "tabData?":
-            browser.runtime.sendMessage({ type: "tabData", tabData });
+            await browser.runtime.sendMessage({type: "tabData", tabData});
             break;
         case "monitoringChange":
-            toggleAddonEnabled(message.isMonitoring);
+            await toggleAddonEnabled(message.isMonitoring);
             break;
         case "reloadRulesChange":
-            updateRulesFromStorage();
+            await updateRulesFromStorage();
             break;
         case "optionsChange":
             Object.assign(options, message.options);
             break;
-        case "pageSourceFiles":
-            if (sender.tab) {
-                pageSourceFilesReceived(message.files, message.rule, sender.tab);
-            }
-            break;
     }
-    await true;
 });
 
 // Record tab when tab URL changes.
@@ -89,42 +83,76 @@ browser.tabs.onActivated.addListener((activeTab) => {
 });
 
 // Toggle icon and title when monitoring is enable/disabled.
-function toggleAddonEnabled(enabled: boolean) {
+async function toggleAddonEnabled(enabled: boolean) {
     isMonitoring = enabled;
     let iconPath: string;
     let title: string;
     if (enabled) {
-        continueMonitoring();
+        await enableMonitoring();
         iconPath = icon;
         title = "Live Reload";
     } else {
-        disableAllMonitoring();
+        await disableAllMonitoring();
         iconPath = iconDisabled;
         title = "Live Reload (disabled)";
     }
-    browser.browserAction.setIcon({ path: iconPath });
-    browser.browserAction.setTitle({ title });
+    browser.browserAction.setIcon({path: iconPath});
+    browser.browserAction.setTitle({title});
 }
 
-async function monitorTabIfRuleMatch(tab: browser.tabs.Tab) {
+interface WebrequestDetails {
+    requestId: string;
+    url: string;
+    method: string;
+    frameId: number;
+    parentFrameId: number;
+    originUrl?: string;
+    documentUrl?: string;
+    tabId: number;
+    type: browser.webRequest.ResourceType;
+    timeStamp: number;
+    statusLine: string;
+    responseHeaders?: browser.webRequest.HttpHeaders;
+    statusCode: number;
+}
+
+function monitorTabIfRuleMatch(tab: browser.tabs.Tab) {
     for (const rule of rules) {
         // Host matches pattern, start monitoring.
         if (tab.id && tab.url && tab.url.match(rule.hostRegExp)) {
-            console.debug("Host pattern", rule.hostRegExp, "matches", tab.url);
+            console.info(tab.id, tab.url, "matches rule", rule.title);
 
-            // Chrome et al need the browser polyfill to be loaded first.
-            if (process.env.BROWSER !== "firefox") {
-                // Don't use browser.extension.getURL() here, breaks Chrome.
-                console.debug("Inject polyfill");
-                const file = "/polyfill.js";
-                await browser.tabs.executeScript(tab.id as number, {file});
-            }
+            removeWebRequestsForTabId(tab.id);
 
-            console.debug("Inject send source files");
-            const code = `(${inject.sendSourceFiles.toString()})("${rule.id}");`;
-            browser.tabs.executeScript(tab.id, { code });
-            // Flow continues at case "pageSourceFiles".
+            const boundListener = webRequestHeadersReceived.bind(null, tab, rule);
+            const filter: browser.webRequest.RequestFilter = {
+                tabId: tab.id,
+                types: ["script", "stylesheet", "sub_frame"],
+                // Cannot use rule.sources, does not match port.
+                // https://bugzilla.mozilla.org/show_bug.cgi?id=1362809
+                urls: ["<all_urls>"],
+            };
+
+            console.debug(tab.id, tab.url, "initialize monitoring");
+            browser.webRequest.onHeadersReceived.addListener(boundListener, filter);
+            webRequestListeners[tab.id] = boundListener;
         }
+    }
+}
+
+function webRequestHeadersReceived(tab: browser.tabs.Tab, rule: Rule, sourceDetails: WebrequestDetails) {
+    const url = stripNoCacheParam(sourceDetails.url);
+    if (
+        anyRuleMatch(rule.sourceRegExps, url)
+    ) {
+        if (anyRuleMatch(rule.ignoresRegExps, url)) {
+            console.debug(url, "IGNORE");
+        } else {
+            console.info(url, "MATCHED");
+            checkSourceFileChanged(tab, rule, sourceDetails);
+        }
+    } else {
+        console.debug(url, "SKIP");
     }
 }
 
@@ -133,51 +161,22 @@ async function updateRulesFromStorage() {
     const storageRules = await Rule.query();
     rules.length = 0;  // Truncate, but keep reference.
     rules.push(...storageRules);
-    restart();
+    await restart();
 }
 
 // Restart.
-function restart() {
-    disableAllMonitoring();
-    continueMonitoring();
+async function restart() {
+    await disableAllMonitoring();
+    await enableMonitoring();
 }
 
-function pageSourceFilesReceived(
-    files: Record<inject.SourceType, string[]>,
-    ruleId: Rule["id"],
-    tab: browser.tabs.Tab,
-) {
-    const rule = rules.find((r) => r.id === ruleId);
-    if (rule) {
-        checkSourceFileMatches(files, rule, tab);
-    }
-}
-
-function anyRuleMatch(regExps: RegExp[], urlNoCache: string): boolean {
-    const regexp = regExps.find((regExp) => regExp.test(urlNoCache));
+function anyRuleMatch(regExps: RegExp[], url: string): boolean {
+    const regexp = regExps.find((regExp) => regExp.test(url));
     if (regexp) {
-        console.debug("Source pattern", regexp, "matches", urlNoCache);
+        console.debug(url, "matches", regexp);
         return true;
     }
     return false;
-}
-
-function checkSourceFileMatches(
-    files: Record<inject.SourceType, string[]>,
-    rule: Rule,
-    tab: browser.tabs.Tab,
-) {
-    Object.entries(files).forEach(([type, filesOfType]) => {
-        (filesOfType as string[]).forEach((url) => {
-            const urlNoCache = stripNoCacheParam(url);
-            if (
-                anyRuleMatch(rule.sourceRegExps, urlNoCache) &&
-                !anyRuleMatch(rule.ignoresRegExps, urlNoCache)
-            ) {
-                checkSourceFileChanged(tab, rule, url, type as inject.SourceType);
-            }
-        });
-    });
 }
 
 // Record the last tab so we're able to populate the add reload rule form.
@@ -187,46 +186,54 @@ function recordTab(tab: browser.tabs.Tab) {
     }
 }
 
-function disableAllMonitoring() {
-    console.debug("Disable monitoring");
+async function disableAllMonitoring() {
+    console.debug("Disable monitoring for all tabs");
     Object.keys(registry).forEach((tabId) => {
         disableTabMonitoring(Number(tabId));
     });
 }
 
-function disableTabMonitoring(tabId: number) {
-    setBadge(Number(tabId), null);
-    Object.values(registry[tabId] || {}).forEach((fileRegistry) => {
+async function disableTabMonitoring(tabId: number) {
+    await removeWebRequestsForTabId(tabId);
+    Object.entries(registry[tabId] || {}).forEach(([fileName, fileRegistry]) => {
+        console.debug(tabId, fileName, "stop file monitoring timer");
         clearTimeout(fileRegistry.timer);
-        delete registry[tabId];
     });
+    delete registry[tabId];
+    await setBadge(Number(tabId), null);
 }
 
-function setBadge(tabId: number, count: number | null) {
-    if (options["show.badge"] && isMonitoring && count !== null) {
-        browser.browserAction.setBadgeBackgroundColor({ color: "black" });
-        browser.browserAction.setBadgeText({ text: count.toString(), tabId });
-    } else {
-        browser.browserAction.setBadgeText({ text: "", tabId });
+async function removeWebRequestsForTabId(tabId: number) {
+    if (webRequestListeners[tabId]) {
+        console.debug(tabId, "remove webrequests listener");
+        await browser.webRequest.onHeadersReceived.removeListener(webRequestListeners[tabId]);
+        delete webRequestListeners[tabId];
     }
 }
 
-async function continueMonitoring() {
-    console.debug("Continue monitoring");
-    const tabs = await browser.tabs.query({
-        status: "complete",
-        windowType: "normal",
-    });
+async function setBadge(tabId: number, count: number | null) {
+    if (options["show.badge"] && isMonitoring && count !== null) {
+        await browser.browserAction.setBadgeBackgroundColor({color: "black"});
+        await browser.browserAction.setBadgeText({text: count.toString(), tabId});
+    } else {
+        await browser.browserAction.setBadgeText({text: "", tabId});
+    }
+}
+
+async function enableMonitoring() {
+    console.debug("Enable monitoring");
+    const tabs = await browser.tabs.query({status: "complete", windowType: "normal"});
     tabs.forEach(monitorTabIfRuleMatch);
 }
 
 async function checkSourceFileChanged(
     tab: browser.tabs.Tab,
     rule: Rule,
-    url: string,
-    type: inject.SourceType,
+    sourceDetails: WebrequestDetails,
 ) {
     let hash;
+    const url = sourceDetails.url as string;
+    const noCacheUrl = stripNoCacheParam(url);
 
     if (!isMonitoring) {
         return;
@@ -234,77 +241,62 @@ async function checkSourceFileChanged(
 
     tab.id = tab.id || 0;
     const tabRegistry = registry[tab.id] = registry[tab.id] || {};
-    const fileRegistry = tabRegistry[url] = tabRegistry[url] || { timer: null };
+    const fileRegistry = tabRegistry[noCacheUrl] = tabRegistry[noCacheUrl] || {timer: null};
 
     try {
         hash = await getFileHash(url);
     } catch (error) {
-        console.error(url, "Error retrieving hash:", error);
+        console.error(noCacheUrl, "Error retrieving hash:", error);
     }
 
-    setBadge(tab.id, Object.keys(tabRegistry).length);
+    await setBadge(tab.id, Object.keys(tabRegistry).length);
 
     // Check whether the source file hash has changed.
     if (hash && fileRegistry.hash && fileRegistry.hash !== hash) {
-        console.debug("File changed", url);
+        console.info(noCacheUrl, "change detected");
         if (
-            (type === inject.SourceType.CSS && rule.inlinecss) ||
-            (type === inject.SourceType.FRAME && rule.inlineframes)
+            (sourceDetails.type === "stylesheet" && rule.inlinecss) ||
+            (sourceDetails.type === "sub_frame" && rule.inlineframes)
         ) {
-            console.debug("Reload inline");
-            delete tabRegistry[url];
+            console.info(noCacheUrl, "inline reload");
+            delete tabRegistry[noCacheUrl];
             const source = inject.inlineReload.toString();
-            const noCacheUrl = getNoCacheURL(url);
-            const code = `(${source})("${type}", "${url}", "${noCacheUrl}");`;
-            browser.tabs.executeScript(tab.id, { code });
-            checkSourceFileChanged(tab, rule, noCacheUrl, type);
+            const code = `(${source})("${sourceDetails.type}", "${url}");`;
+            await browser.tabs.executeScript(tab.id, {code});
         } else {
-            console.debug("Reload page");
-            browser.tabs.reload(tab.id);
-            disableTabMonitoring(tab.id);
+            console.info(noCacheUrl, "reload parent page");
+            await disableTabMonitoring(tab.id);
+            await browser.tabs.reload(tab.id, {bypassCache: true});
         }
     } else {
         // Not changed or old/new hash cannot be retrieved, retry later:
+        console.debug(noCacheUrl, "not changed");
         clearTimeout(fileRegistry.timer);
         fileRegistry.hash = hash || fileRegistry.hash;
         fileRegistry.timer = window.setTimeout(() => {
-            checkSourceFileChanged(tab, rule, url, type);
+            checkSourceFileChanged(tab, rule, sourceDetails);
         }, rule.intervalMs);
     }
 }
 
-// Append a unique string to a URL to avoid cache.
-function getNoCacheURL(url: string): string {
-    const urlObj = new URL(url);
-    const timeHash = new Date().getTime().toString(36).substr(3).toUpperCase();
-    urlObj.searchParams.set(NO_CACHE_PARAM, timeHash);
-    return urlObj.href;
+// Get file contents and hash it.
+async function getFileHash(url: string): Promise<string> {
+    const response = await fetch(url, {cache: "reload"});
+    const text = await response.text();
+    return sha1(text);
+}
+
+// Retrieve a SHA1 hash for a string.
+async function sha1(str: string): Promise<string> {
+    const msgUint8 = new TextEncoder().encode(str);
+    const hashBuffer = await crypto.subtle.digest("SHA-1", msgUint8);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 // Strip 'X-LR-NOCACHE' from url so matching won't be affected.
 function stripNoCacheParam(url: string): string {
     const urlObj = new URL(url);
-    urlObj.searchParams.delete(NO_CACHE_PARAM);
+    urlObj.searchParams.delete("X-LR-NOCACHE");
     return urlObj.href;
-}
-
-// Get file contents and hash it.
-async function getFileHash(url: string): Promise<string> {
-    const response = await fetch(url, { cache: "reload" });
-    const text = await response.text();
-    return sha1(text);
-}
-
-// Retrieve the SHA1 hash for a string.
-async function sha1(str: string): Promise<string> {
-    const encodedText = new TextEncoder().encode(str);
-    const sha1Buffer = await crypto.subtle.digest("SHA-1", encodedText);
-    const padZeroes = "00000000";
-    const dataView = new DataView(sha1Buffer);
-    let ret = "";
-    for (let i = 0; i < dataView.byteLength; i += 4) {
-        const hexString = dataView.getUint32(i).toString(16);
-        ret += (padZeroes + hexString).slice(-padZeroes.length);
-    }
-    return ret;
 }

@@ -87,7 +87,7 @@ app.get(frameUrl, function(req, res) {
 
 app.get(scriptUrl, function(req, res) {
     log(req);
-    res.contentType('text/script');
+    res.contentType('application/javascript');
     res.send(`
         const pre = document.querySelector('pre');
         pre.textContent = "Script loaded at ${now()}";

@@ -120,7 +120,7 @@ class Rule {
 
     public async save(): Promise<Rule> {
         try {
-            await storage.set({ [this.id]: this.toStorage() });
+            await storage.set({ [this.id]: this.toStorage()});
         } catch (error) {
             throw new Error(`Error saving rule: ${error.message}`);
         }

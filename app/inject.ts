@@ -1,58 +1,34 @@
-import {Rule} from "./lib/rule";
-
-export const enum SourceType {
-    HOST = "HOST",
-    CSS = "CSS",
-    JS = "JS",
-    FRAME = "FRAME",
-}
-
-/**
- * Send source file data from the host page to pageSourceFilesReceived().
- * Injected into the host page.
- */
-export function sendSourceFiles(rule: Rule) {
-    const css: HTMLLinkElement[] = Array.from(
-        document.querySelectorAll("link[rel=stylesheet]"),
-    );
-    const js: HTMLScriptElement[] = Array.from(
-        document.querySelectorAll("script[src]"),
-    );
-    const frames: HTMLIFrameElement[] = Array.from(
-        document.querySelectorAll("iframe[src]"),
-    );
-    browser.runtime.sendMessage({
-        type: "pageSourceFiles", rule, files: {
-            [SourceType.HOST]: [location.href],
-            [SourceType.CSS]: css.map((element) => element.href),
-            [SourceType.JS]: js.map((element) => element.src),
-            [SourceType.FRAME]: frames.map((element) => element.src),
-        },
-    });
-}
-
 /**
  * Replace inline frames and stylesheet includes.
  * Injected into the host page.
  */
-export function inlineReload(type: SourceType, url: string, updateUrl: string) {
-    if (type === SourceType.CSS) {
-        const styles: HTMLLinkElement[] = Array.from(
-            document.querySelectorAll("link[rel=stylesheet]"),
-        );
-        styles.forEach((element) => {
-            if (element.href === url) {
-                element.href = updateUrl;
-            }
+export function inlineReload(type: browser.webRequest.ResourceType, url: string) {
+
+    if (type === "stylesheet") {
+        const selector = document.querySelectorAll("link[rel=stylesheet]");
+        const allLinks = Array.from(selector) as HTMLLinkElement[];
+        const filtered = allLinks.filter((h) => h.href === url);
+
+        (filtered.length ? filtered : allLinks).forEach((element) => {
+            element.setAttribute("href", getNoCacheURL(element.href));
         });
-    } else if (type === SourceType.FRAME) {
-        const frames: HTMLFrameElement[] = Array.from(
-            document.querySelectorAll("iframe[src]"),
-        );
-        frames.forEach((element) => {
-            if (element.src === url) {
-                element.src = updateUrl;
-            }
+    }
+
+    if (type === "sub_frame") {
+        const selector = document.querySelectorAll("frame[src], iframe[src]");
+        const allFrames = Array.from(selector) as HTMLFrameElement[];
+        const filtered = allFrames.filter((f) => f.src === url);
+
+        (filtered.length ? filtered : allFrames).forEach((element) => {
+            element.setAttribute("src", getNoCacheURL(element.src));
         });
+    }
+
+    // Append a unique string to a URL to avoid cache.
+    function getNoCacheURL(origUrl: string): string {
+        const urlObj = new URL(origUrl);
+        const timeHash = new Date().getTime().toString(36).substr(3).toUpperCase();
+        urlObj.searchParams.set("X-LR-NOCACHE", timeHash);
+        return urlObj.href;
     }
 }
