@@ -19,8 +19,7 @@ const tabData = {};
 const registry: Record<number, TabRegistry> = {};
 const options: UserOptions = {};
 const rules: Rule[] = [];
-
-const webRequestListeners: Record<number, any> = {};  // TODO: Typing
+const webRequestListeners: Record<number, () => void> = {};
 
 (async () => {
     const optionsResult = await browser.storage.local.get("options");
@@ -116,13 +115,13 @@ interface WebrequestDetails {
     statusCode: number;
 }
 
-function monitorTabIfRuleMatch(tab: browser.tabs.Tab) {
+async function monitorTabIfRuleMatch(tab: browser.tabs.Tab) {
     for (const rule of rules) {
         // Host matches pattern, start monitoring.
         if (tab.id && tab.url && tab.url.match(rule.hostRegExp)) {
             console.info(tab.id, tab.url, "matches rule", rule.title);
 
-            removeWebRequestsForTabId(tab.id);
+            await removeWebRequestsForTabId(tab.id);
 
             const boundListener = webRequestHeadersReceived.bind(null, tab, rule);
             const filter: browser.webRequest.RequestFilter = {
