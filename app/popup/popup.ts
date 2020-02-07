@@ -23,14 +23,11 @@ document.documentElement.classList.add(process.env.BROWSER as string);
 
 // Fetch Addon active from background.js.
 browser.runtime.sendMessage({type: "isMonitoring?"});
-browser.runtime.onMessage.addListener(async (message) => {
-    switch (message.type) {
-        case "isMonitoring":
-            isMonitoring = message.isMonitoring;
-            updatePopupUI();
-            break;
+browser.runtime.onMessage.addListener((message) => {
+    if (message.type === "isMonitoring") {
+        isMonitoring = message.isMonitoring;
+        updatePopupUI();
     }
-    await true;
 });
 
 // Handle clicks on enabled/disabled state.

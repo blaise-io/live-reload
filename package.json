@@ -1,6 +1,6 @@
 {
   "name": "live-reload",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Monitors source files on a page. Reloads the page or just the changed stylesheet when source files are updated.",
   "main": "npm run build",
   "config": {
@@ -30,7 +30,7 @@
   "dependencies": {
     "@types/clean-webpack-plugin": "0.1.2",
     "@types/extract-text-webpack-plugin": "3.0.3",
-    "@types/firefox-webext-browser": "67.0.1",
+    "@types/firefox-webext-browser": "70.0.1",
     "@types/html-webpack-plugin": "2.30.3",
     "@types/mini-css-extract-plugin": "0.2.0",
     "@types/node": "12.0.2",
@@ -38,7 +38,7 @@
     "@types/zip-webpack-plugin": "3.0.0",
     "clean-webpack-plugin": "0.1.19",
     "core-js": "3.1.2",
-    "css-loader": "0.28.11",
+    "css-loader": "3.4.2",
     "dts-gen": "0.5.7",
     "extract-text-webpack-plugin": "4.0.0-beta.0",
     "file-loader": "1.1.11",
@@ -46,9 +46,9 @@
     "mini-css-extract-plugin": "0.4.0",
     "ts-loader": "6.0.1",
     "ts-node": "8.1.0",
-    "tslint": "5.10.0",
+    "tslint": "6.0.0",
     "typescript": "3.4.5",
-    "webextension-polyfill": "0.4.0",
+    "webextension-polyfill": "0.6.0",
     "webpack": "4.32.2",
     "webpack-command": "0.4.2",
     "zip-webpack-plugin": "3.0.0"

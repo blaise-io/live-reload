@@ -24,8 +24,8 @@ const FILESYSTEM_ERROR = `Not saved!
             updateRule(rule);
         }
     } else {
-        browser.runtime.sendMessage({ type: "tabData?" });
         browser.runtime.onMessage.addListener(createNewRule);
+        await browser.runtime.sendMessage({type: "tabData?"});
     }
 })();
 
@@ -37,7 +37,7 @@ function updateRule(rule: Rule) {
     populateForm(rule, true, title);
 }
 
-async function createNewRule(message: {type: string, tabData: browser.tabs.Tab}) {
+async function createNewRule(message: { type: string, tabData: browser.tabs.Tab }) {
     if (message.type === "tabData") {
         browser.runtime.onMessage.removeListener(createNewRule);
 
@@ -49,7 +49,6 @@ async function createNewRule(message: {type: string, tabData: browser.tabs.Tab})
 
         populateForm(rule, false, "Create a new reload rule");
     }
-    await true;
 }
 
 function populateForm(rule: Rule, update: boolean, title: string) {
@@ -71,9 +70,9 @@ function populateForm(rule: Rule, update: boolean, title: string) {
     document.forms[0].addEventListener("submit", async (event) => {
         event.preventDefault();
         await handleFormSubmit(rule);
-        browser.runtime.sendMessage({ type: "reloadRulesChange" });
+        await browser.runtime.sendMessage({type: "reloadRulesChange"});
         window.alert(`Saved: ${rule.title}`);
-        dom.closeWindow();
+        await dom.closeWindow();
     });
 }
 
