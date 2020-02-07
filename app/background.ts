@@ -184,11 +184,15 @@ async function removeWebRequestsForTabId(tabId: number) {
 }
 
 async function setBadge(tabId: number, count: number | null) {
-    if (options["show.badge"] && isMonitoring && count !== null) {
-        await browser.browserAction.setBadgeBackgroundColor({color: "black"});
-        await browser.browserAction.setBadgeText({text: count.toString(), tabId});
-    } else {
-        await browser.browserAction.setBadgeText({text: "", tabId});
+    try {
+        if (options["show.badge"] && isMonitoring && count !== null) {
+            await browser.browserAction.setBadgeBackgroundColor({color: "black"});
+            await browser.browserAction.setBadgeText({text: count.toString(), tabId});
+        } else {
+            await browser.browserAction.setBadgeText({text: "", tabId});
+        }
+    } catch (err) {
+        return  // Tab closed
     }
 }
 

@@ -29,6 +29,9 @@ const baseStyle = `
     pre::after {
         display: block;
     }
+    div {
+        margin-top: 3em;
+    }
 `;
 
 
@@ -56,7 +59,6 @@ app.get('/', function(req, res) {
             <iframe src="${frameUrl}"></iframe>
             <pre id="js"></pre>
             <pre id="css"></pre>
-            <hr>
             <div>Create a reload rule</div>
             <dl>
                 <dt>Host URL</dt>
@@ -99,7 +101,6 @@ app.get(styleUrl, function(req, res) {
     res.contentType('text/css');
     res.send(`
         @import "${styleImportUrl}";
-
         pre#css::before {
             content: " Style loaded at ${now()}"
         }
