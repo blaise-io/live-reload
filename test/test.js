@@ -11,6 +11,7 @@ const app = express();
 const frameUrl = '/pages/frame.html';
 const scriptUrl = '/static/abc/def/script.js';
 const styleUrl = '/static/abc/def/style.css';
+const styleImportUrl = '/static/abc/def/import.css';
 const baseStyle = `
     body {
         font: 18px/24px monospace;
@@ -19,15 +20,12 @@ const baseStyle = `
         margin: 0 auto;
     }
     iframe {
-        margin: 5em 0 0;
-        height: 18px;
+        margin: 5em 0 -4px;
+        height: 22px;
         width: 100%;
         border: none;
     }
-    pre {
-        min-height: 5em;
-        margin: 0 0 2em;
-    }
+    pre::before,
     pre::after {
         display: block;
     }
@@ -56,7 +54,9 @@ app.get('/', function(req, res) {
             <style>${baseStyle}</style>
             <link rel="stylesheet" href="${styleUrl}">
             <iframe src="${frameUrl}"></iframe>
-            <pre></pre>
+            <pre id="js"></pre>
+            <pre id="css"></pre>
+            <hr>
             <div>Create a reload rule</div>
             <dl>
                 <dt>Host URL</dt>
@@ -89,7 +89,7 @@ app.get(scriptUrl, function(req, res) {
     log(req);
     res.contentType('application/javascript');
     res.send(`
-        const pre = document.querySelector('pre');
+        const pre = document.querySelector('pre#js');
         pre.textContent = "Script loaded at ${now()}";
     `);
 });
@@ -98,8 +98,20 @@ app.get(styleUrl, function(req, res) {
     log(req);
     res.contentType('text/css');
     res.send(`
-        pre::after {
+        @import "${styleImportUrl}";
+
+        pre#css::before {
             content: " Style loaded at ${now()}"
+        }
+    `);
+});
+
+app.get(styleImportUrl, function(req, res) {
+    log(req);
+    res.contentType('text/css');
+    res.send(`
+        pre#css::after {
+            content: "Import loaded at ${now()}"
         }
     `);
 });

@@ -84,7 +84,8 @@ class Rule {
         public modified = new Date(),
         public inlinecss = true,
         public inlineframes = true,
-    ) { }
+    ) {
+    }
 
     get hostRegExp(): RegExp {
         return matchPattern.toRegExp(this.host);
@@ -120,7 +121,7 @@ class Rule {
 
     public async save(): Promise<Rule> {
         try {
-            await storage.set({ [this.id]: this.toStorage()});
+            await storage.set({[this.id]: this.toStorage()});
         } catch (error) {
             throw new Error(`Error saving rule: ${error.message}`);
         }

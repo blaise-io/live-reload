@@ -4,16 +4,9 @@ import * as inject from "./inject";
 import * as matchPattern from "./lib/match-pattern";
 import { Rule } from "./lib/rule";
 import { defaults, UserOptions } from "./options/defaults";
+import { anyRegexMatch, getFileHash, stripNoCacheParam } from "./util";
 
 let isMonitoring: boolean = true;
-
-interface FileRegistry {
-    timer?: number;
-    hash?: string;
-}
-
-interface TabRegistry extends Record<string, FileRegistry> {
-}
 
 const tabData = {};
 const registry: Record<number, TabRegistry> = {};
@@ -38,7 +31,7 @@ browser.storage.local.get("isMonitoring").then(async (result) => {
 browser.tabs.onUpdated.addListener(async (_, __, tab) => {
     if (isMonitoring && tab.status === "loading" && tab.id) {
         await disableTabMonitoring(tab.id);
-        monitorTabIfRuleMatch(tab);
+        await monitorTabIfRuleMatch(tab);
     }
 });
 
@@ -95,24 +88,8 @@ async function toggleAddonEnabled(enabled: boolean) {
         iconPath = iconDisabled;
         title = "Live Reload (disabled)";
     }
-    browser.browserAction.setIcon({path: iconPath});
-    browser.browserAction.setTitle({title});
-}
-
-interface WebrequestDetails {
-    requestId: string;
-    url: string;
-    method: string;
-    frameId: number;
-    parentFrameId: number;
-    originUrl?: string;
-    documentUrl?: string;
-    tabId: number;
-    type: browser.webRequest.ResourceType;
-    timeStamp: number;
-    statusLine: string;
-    responseHeaders?: browser.webRequest.HttpHeaders;
-    statusCode: number;
+    await browser.browserAction.setIcon({path: iconPath});
+    await browser.browserAction.setTitle({title});
 }
 
 async function monitorTabIfRuleMatch(tab: browser.tabs.Tab) {
@@ -139,16 +116,16 @@ async function monitorTabIfRuleMatch(tab: browser.tabs.Tab) {
     }
 }
 
-function webRequestHeadersReceived(tab: browser.tabs.Tab, rule: Rule, sourceDetails: WebrequestDetails) {
+async function webRequestHeadersReceived(tab: browser.tabs.Tab, rule: Rule, sourceDetails: WebrequestDetails) {
     const url = stripNoCacheParam(sourceDetails.url);
     if (
-        anyRuleMatch(rule.sourceRegExps, url)
+        anyRegexMatch(rule.sourceRegExps, url)
     ) {
-        if (anyRuleMatch(rule.ignoresRegExps, url)) {
+        if (anyRegexMatch(rule.ignoresRegExps, url)) {
             console.debug(url, "IGNORE");
         } else {
             console.info(url, "MATCHED");
-            checkSourceFileChanged(tab, rule, sourceDetails);
+            await checkSourceFileChanged(tab, rule, sourceDetails);
         }
     } else {
         console.debug(url, "SKIP");
@@ -163,26 +140,15 @@ async function updateRulesFromStorage() {
     await restart();
 }
 
-// Restart.
 async function restart() {
     await disableAllMonitoring();
     await enableMonitoring();
 }
 
-function anyRuleMatch(regExps: RegExp[], url: string): boolean {
-    const regexp = regExps.find((regExp) => regExp.test(url));
-    if (regexp) {
-        console.debug(url, "matches", regexp);
-        return true;
-    }
-    return false;
-}
-
-// Record the last tab so we're able to populate the add reload rule form.
-function recordTab(tab: browser.tabs.Tab) {
-    if (!tab.incognito && tab.url && tab.url.match(matchPattern.ALL_URLS_RE)) {
-        Object.assign(tabData, tab);
-    }
+async function enableMonitoring() {
+    console.debug("Enable monitoring");
+    const tabs = await browser.tabs.query({status: "complete", windowType: "normal"});
+    tabs.forEach(monitorTabIfRuleMatch);
 }
 
 async function disableAllMonitoring() {
@@ -202,6 +168,13 @@ async function disableTabMonitoring(tabId: number) {
     await setBadge(Number(tabId), null);
 }
 
+// Record the last tab so we're able to populate the add reload rule form.
+function recordTab(tab: browser.tabs.Tab) {
+    if (!tab.incognito && tab.url && tab.url.match(matchPattern.ALL_URLS_RE)) {
+        Object.assign(tabData, tab);
+    }
+}
+
 async function removeWebRequestsForTabId(tabId: number) {
     if (webRequestListeners[tabId]) {
         console.debug(tabId, "remove webrequests listener");
@@ -217,12 +190,6 @@ async function setBadge(tabId: number, count: number | null) {
     } else {
         await browser.browserAction.setBadgeText({text: "", tabId});
     }
-}
-
-async function enableMonitoring() {
-    console.debug("Enable monitoring");
-    const tabs = await browser.tabs.query({status: "complete", windowType: "normal"});
-    tabs.forEach(monitorTabIfRuleMatch);
 }
 
 async function checkSourceFileChanged(
@@ -276,26 +243,4 @@ async function checkSourceFileChanged(
             checkSourceFileChanged(tab, rule, sourceDetails);
         }, rule.intervalMs);
     }
-}
-
-// Get file contents and hash it.
-async function getFileHash(url: string): Promise<string> {
-    const response = await fetch(url, {cache: "reload"});
-    const text = await response.text();
-    return sha1(text);
-}
-
-// Retrieve a SHA1 hash for a string.
-async function sha1(str: string): Promise<string> {
-    const msgUint8 = new TextEncoder().encode(str);
-    const hashBuffer = await crypto.subtle.digest("SHA-1", msgUint8);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-// Strip 'X-LR-NOCACHE' from url so matching won't be affected.
-function stripNoCacheParam(url: string): string {
-    const urlObj = new URL(url);
-    urlObj.searchParams.delete("X-LR-NOCACHE");
-    return urlObj.href;
 }
