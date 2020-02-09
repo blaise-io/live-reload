@@ -7,6 +7,7 @@ import * as webpack from "webpack";
 import * as ZipPlugin from "zip-webpack-plugin";
 
 const REQUIRE_POLYFILL = process.env.BROWSER !== "firefox";
+const IS_PROD = process.argv.includes("--run-prod");
 
 function polyfillChunks(...chunks: string[]): string[] {
     return REQUIRE_POLYFILL ? ["polyfill", ...chunks] : chunks;
@@ -30,6 +31,7 @@ const config: webpack.Configuration = {
         namedChunks: true,
         namedModules: true,
         removeEmptyChunks: true,
+        removeAvailableModules: true,
     },
     resolve: {
         extensions: [".ts"],
@@ -95,11 +97,12 @@ const config: webpack.Configuration = {
             filename: "popup.html",
             template: resolve(__dirname, "app/popup/popup.html"),
         }),
-        ...(process.argv.includes("--run-prod") ? [
+        ...(IS_PROD ? [
             new ZipPlugin({
                 exclude: [
-                    /manifest\.(js|js\.map)$/,
-                    ...(REQUIRE_POLYFILL ? [] : [/polyfill\.(js|js\.map)$/]),
+                    /\.map$/,
+                    /manifest\.js$/,
+                    ...(REQUIRE_POLYFILL ? [] : [/polyfill\.js$/]),
                 ],
                 filename: [
                     process.env.npm_package_name,
