@@ -13,14 +13,15 @@ const scriptUrl = '/static/abc/def/script.js';
 const styleUrl = '/static/abc/def/style.css';
 const styleImportUrl = '/static/abc/def/import.css';
 const baseStyle = `
-    body {
+    html, body {
         font: 18px/24px monospace;
         width: 400px;
         padding: 0;
         margin: 0 auto;
+        overflow: hidden;
     }
     iframe {
-        margin: 5em 0 -4px;
+        margin: 2em 0 -4px;
         height: 22px;
         width: 100%;
         border: none;
@@ -68,6 +69,7 @@ app.get('/', function(req, res) {
                     http://${req.get('Host')}/*.css<br>
                     http://${req.get('Host')}/*.html</dd>
             </dl>
+            <button onclick="history.pushState(null, '', '/?' + Math.random().toString(36).substr(2))">Pushstate</button>
             <script src="${scriptUrl}"></script>
         </html>
     `);

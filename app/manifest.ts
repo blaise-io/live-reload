@@ -10,7 +10,7 @@ const manifest = {
     version: process.env.npm_package_version,
     description: process.env.npm_package_description,
     homepage_url: process.env.npm_package_homepage,
-    permissions: ["<all_urls>", "storage", "tabs", "webRequest"],
+    permissions: ["<all_urls>", "storage", "tabs", "webNavigation", "webRequest"],
     applications: undefined as ManifestApplication | undefined,
     background: {
         scripts: ["/background.js"],

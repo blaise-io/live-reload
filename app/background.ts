@@ -26,12 +26,12 @@ browser.storage.local.get("isMonitoring").then(async (result) => {
     await toggleAddonEnabled(!("isMonitoring" in result) || result.isMonitoring);
 });
 
-// Whenever a page in a tab is done loading, check whether the page
-// requires any source file monitoring.
-browser.tabs.onUpdated.addListener(async (_, __, tab) => {
-    if (isMonitoring && tab.status === "loading" && tab.id) {
-        await disableTabMonitoring(tab.id);
-        await monitorTabIfRuleMatch(tab);
+// Whenever a user navigates to a new page in the top-level frame, we restart monitoring.
+browser.webNavigation.onBeforeNavigate.addListener(async (details) => {
+    if (isMonitoring && details.frameId === 0) {
+        console.log(details.tabId, "Navigated to new URL:", details.url);
+        await disableTabMonitoring(details.tabId);
+        await monitorTabIfRuleMatch(details.tabId, details.url);
     }
 });
 
@@ -92,43 +92,43 @@ async function toggleAddonEnabled(enabled: boolean) {
     await browser.browserAction.setTitle({title});
 }
 
-async function monitorTabIfRuleMatch(tab: browser.tabs.Tab) {
+async function monitorTabIfRuleMatch(tabId: number, tabUrl: string) {
     for (const rule of rules) {
         // Host matches pattern, start monitoring.
-        if (tab.id && tab.url && tab.url.match(rule.hostRegExp)) {
-            console.info(tab.id, tab.url, "matches rule", rule.title);
+        if (tabId && tabUrl && tabUrl.match(rule.hostRegExp)) {
+            console.info(tabId, tabUrl, "matches rule", rule.title);
 
-            await removeWebRequestsForTabId(tab.id);
+            await removeWebRequestsForTabId(tabId);
 
-            const boundListener = webRequestHeadersReceived.bind(null, tab, rule);
+            const boundListener = webRequestHeadersReceived.bind(null, tabId, rule);
             const filter: browser.webRequest.RequestFilter = {
-                tabId: tab.id,
+                tabId: tabId,
                 types: ["script", "stylesheet", "sub_frame"],
                 // Cannot use rule.sources, does not match port.
                 // https://bugzilla.mozilla.org/show_bug.cgi?id=1362809
                 urls: ["<all_urls>"],
             };
 
-            console.debug(tab.id, tab.url, "initialize monitoring");
+            console.debug(tabId, tabUrl, "initialize monitoring");
             browser.webRequest.onHeadersReceived.addListener(boundListener, filter);
-            webRequestListeners[tab.id] = boundListener;
+            webRequestListeners[tabId] = boundListener;
         }
     }
 }
 
-async function webRequestHeadersReceived(tab: browser.tabs.Tab, rule: Rule, sourceDetails: WebrequestDetails) {
+async function webRequestHeadersReceived(tabId: number, rule: Rule, sourceDetails: WebrequestDetails) {
     const url = stripNoCacheParam(sourceDetails.url);
     if (
         anyRegexMatch(rule.sourceRegExps, url)
     ) {
         if (anyRegexMatch(rule.ignoresRegExps, url)) {
-            console.debug(url, "IGNORE");
+            console.debug("IGNORE", url);
         } else {
-            console.info(url, "MATCHED");
-            await checkSourceFileChanged(tab, rule, sourceDetails);
+            console.info("MATCH", url);
+            await checkSourceFileChanged(tabId, rule, sourceDetails);
         }
     } else {
-        console.debug(url, "SKIP");
+        console.debug("SKIP", url);
     }
 }
 
@@ -148,7 +148,11 @@ async function restart() {
 async function enableMonitoring() {
     console.debug("Enable monitoring");
     const tabs = await browser.tabs.query({status: "complete", windowType: "normal"});
-    tabs.forEach(monitorTabIfRuleMatch);
+    tabs.forEach((tab) => {
+        if (tab.id && tab.url) {
+            monitorTabIfRuleMatch(tab.id, tab.url)
+        }
+    });
 }
 
 async function disableAllMonitoring() {
@@ -159,6 +163,7 @@ async function disableAllMonitoring() {
 }
 
 async function disableTabMonitoring(tabId: number) {
+    console.debug(tabId, "disable tab monitoring");
     await removeWebRequestsForTabId(tabId);
     Object.entries(registry[tabId] || {}).forEach(([fileName, fileRegistry]) => {
         console.debug(tabId, fileName, "stop file monitoring timer");
@@ -197,7 +202,7 @@ async function setBadge(tabId: number, count: number | null) {
 }
 
 async function checkSourceFileChanged(
-    tab: browser.tabs.Tab,
+    tabId: number,
     rule: Rule,
     sourceDetails: WebrequestDetails,
 ) {
@@ -209,8 +214,7 @@ async function checkSourceFileChanged(
         return;
     }
 
-    tab.id = tab.id || 0;
-    const tabRegistry = registry[tab.id] = registry[tab.id] || {};
+    const tabRegistry = registry[tabId] = registry[tabId] || {};
     const fileRegistry = tabRegistry[noCacheUrl] = tabRegistry[noCacheUrl] || {timer: null};
 
     try {
@@ -219,7 +223,7 @@ async function checkSourceFileChanged(
         console.error(noCacheUrl, "Error retrieving hash:", error);
     }
 
-    await setBadge(tab.id, Object.keys(tabRegistry).length);
+    await setBadge(tabId, Object.keys(tabRegistry).length);
 
     // Check whether the source file hash has changed.
     if (hash && fileRegistry.hash && fileRegistry.hash !== hash) {
@@ -232,11 +236,11 @@ async function checkSourceFileChanged(
             delete tabRegistry[noCacheUrl];
             const source = inject.inlineReload.toString();
             const code = `(${source})("${sourceDetails.type}", "${url}");`;
-            await browser.tabs.executeScript(tab.id, {code});
+            await browser.tabs.executeScript(tabId, {code});
         } else {
             console.info(noCacheUrl, "reload parent page");
-            await disableTabMonitoring(tab.id);
-            await browser.tabs.reload(tab.id, {bypassCache: true});
+            await disableTabMonitoring(tabId);
+            await browser.tabs.reload(tabId, {bypassCache: true});
         }
     } else {
         // Not changed or old/new hash cannot be retrieved, retry later:
@@ -244,7 +248,7 @@ async function checkSourceFileChanged(
         clearTimeout(fileRegistry.timer);
         fileRegistry.hash = hash || fileRegistry.hash;
         fileRegistry.timer = window.setTimeout(() => {
-            checkSourceFileChanged(tab, rule, sourceDetails);
+            checkSourceFileChanged(tabId, rule, sourceDetails);
         }, rule.intervalMs);
     }
 }
