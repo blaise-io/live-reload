@@ -8,7 +8,8 @@
   },
   "scripts": {
     "lint": "tslint -p . --fix",
-    "tag": "git tag $npm_package_version && git push origin $npm_package_version",
+    "tag": "git tag $npm_package_version && git push origin $npm_package_version && npm run get_source",
+    "get_source": "curl -sSL -o dist/$npm_package_version.zip https://github.com/blaise-io/live-reload/archive/$npm_package_version.zip",
     "test": "supervisor -w test/* test/test.js",
     "test.browser": "open http://127.0.0.1:3000",
     "build": "npm run firefox.build; npm run chrome.build",
