@@ -1,6 +1,7 @@
 import * as iconDisabled from "./icons/icon-disabled.png";
 import * as icon from "./icons/icon.png";
 import * as inject from "./inject";
+import { sourceHost } from "./lib/match-pattern";
 import * as matchPattern from "./lib/match-pattern";
 import { Rule } from "./lib/rule";
 import { defaults, UserOptions } from "./options/defaults";
@@ -100,17 +101,21 @@ async function monitorTabIfRuleMatch(tabId: number, tabUrl: string) {
 
             await removeWebRequestsForTabId(tabId);
 
-            const boundListener = webRequestHeadersReceived.bind(null, tabId, rule);
+            // Match all paths of all hosts in rules.sources,
+            // strict filtering in webRequestHeadersReceived:
+            const urls = rule.sources.map((source) => sourceHost(source))
+
             const filter: browser.webRequest.RequestFilter = {
                 tabId: tabId,
                 types: ["script", "stylesheet", "sub_frame"],
-                // Cannot use rule.sources, does not match port.
-                // https://bugzilla.mozilla.org/show_bug.cgi?id=1362809
-                urls: ["<all_urls>"],
+                urls: urls,
             };
 
             console.debug(tabId, tabUrl, "initialize monitoring");
+            const boundListener = webRequestHeadersReceived.bind(null, tabId, rule);
+
             browser.webRequest.onHeadersReceived.addListener(boundListener, filter);
+            boundListener({url: tabUrl, type: "main_frame"})  // manual trigger to avoid race condition
             webRequestListeners[tabId] = boundListener;
         }
     }
@@ -146,13 +151,17 @@ async function restart() {
 }
 
 async function enableMonitoring() {
-    console.debug("Enable monitoring");
-    const tabs = await browser.tabs.query({status: "complete", windowType: "normal"});
-    tabs.forEach((tab) => {
-        if (tab.id && tab.url) {
-            monitorTabIfRuleMatch(tab.id, tab.url)
-        }
-    });
+    if (rules.length) {
+        console.debug("Enable monitoring with reload rules", rules);
+        const tabs = await browser.tabs.query({status: "complete", windowType: "normal"});
+        tabs.forEach((tab) => {
+            if (tab.id && tab.url) {
+                monitorTabIfRuleMatch(tab.id, tab.url)
+            }
+        });
+    } else {
+        console.debug("No reload rules, no monitoring");
+    }
 }
 
 async function disableAllMonitoring() {
@@ -215,7 +224,7 @@ async function checkSourceFileChanged(
     }
 
     const tabRegistry = registry[tabId] = registry[tabId] || {};
-    const fileRegistry = tabRegistry[noCacheUrl] = tabRegistry[noCacheUrl] || {timer: null};
+    const fileRegistry = tabRegistry[noCacheUrl] = tabRegistry[noCacheUrl] || {hash: null, timer: null};
 
     try {
         hash = await getFileHash(url);

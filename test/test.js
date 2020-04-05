@@ -15,13 +15,16 @@ const styleImportUrl = '/static/abc/def/import.css';
 const baseStyle = `
     html, body {
         font: 18px/24px monospace;
-        width: 400px;
+        width: 700px;
         padding: 0;
         margin: 0 auto;
         overflow: hidden;
     }
+    button {
+        font: inherit;
+    }
     iframe {
-        margin: 2em 0 -4px;
+        margin: 0 0 -4px;
         height: 22px;
         width: 100%;
         border: none;
@@ -57,18 +60,10 @@ app.get('/', function(req, res) {
             <title>Live Reload test</title>
             <style>${baseStyle}</style>
             <link rel="stylesheet" href="${styleUrl}">
+            <pre id="main">${now()} ${req.get('Host')}/</pre>
             <iframe src="${frameUrl}"></iframe>
             <pre id="js"></pre>
             <pre id="css"></pre>
-            <div>Create a reload rule</div>
-            <dl>
-                <dt>Host URL</dt>
-                <dd>http://${req.get('Host')}/*</dd>
-                <dt>Source URLs</dt>
-                <dd>http://${req.get('Host')}/*.js<br>
-                    http://${req.get('Host')}/*.css<br>
-                    http://${req.get('Host')}/*.html</dd>
-            </dl>
             <button onclick="history.pushState(null, '', '/?' + Math.random().toString(36).substr(2))">Pushstate</button>
             <script src="${scriptUrl}"></script>
         </html>
@@ -83,7 +78,7 @@ app.get(frameUrl, function(req, res) {
         <html>
             <meta charset="utf-8">
             <style>${baseStyle}</style>
-            &nbsp;Frame loaded at ${now()}
+            ${now()} ${req.get('Host')}${frameUrl}
         </html>
     `);
 });
@@ -94,7 +89,7 @@ app.get(scriptUrl, function(req, res) {
     res.contentType('application/javascript');
     res.send(`
         const pre = document.querySelector('pre#js');
-        pre.textContent = "Script loaded at ${now()}";
+        pre.textContent = "${now()} ${req.get('Host')}${scriptUrl}";
     `);
 });
 
@@ -104,7 +99,7 @@ app.get(styleUrl, function(req, res) {
     res.send(`
         @import "${styleImportUrl}";
         pre#css::before {
-            content: " Style loaded at ${now()}"
+            content: "${now()} ${req.get('Host')}${styleUrl}"
         }
     `);
 });
@@ -114,7 +109,7 @@ app.get(styleImportUrl, function(req, res) {
     res.contentType('text/css');
     res.send(`
         pre#css::after {
-            content: "Import loaded at ${now()}"
+            content: "${now()} ${req.get('Host')}${styleImportUrl}"
         }
     `);
 });

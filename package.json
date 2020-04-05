@@ -1,6 +1,6 @@
 {
   "name": "live-reload",
-  "version": "1.8.1",
+  "version": "1.8.2",
   "description": "Monitors source files on a page. Reloads the page or just the changed stylesheet when source files are updated.",
   "main": "npm run build",
   "config": {
@@ -9,13 +9,14 @@
   "scripts": {
     "lint": "tslint -p . --fix",
     "tag": "git tag $npm_package_version && git push origin $npm_package_version",
-    "test.page": "supervisor -w test/* test/test.js",
+    "test": "supervisor -w test/* test/test.js",
     "test.browser": "open http://127.0.0.1:3000",
     "build": "npm run firefox.build; npm run chrome.build",
     "chrome.dev": "BROWSER=chrome $npm_package_config_webpack --watch --run-dev",
     "chrome.build": "BROWSER=chrome $npm_package_config_webpack --run-prod",
     "firefox.dev": "BROWSER=firefox $npm_package_config_webpack --watch --run-dev",
-    "firefox.build": "BROWSER=firefox $npm_package_config_webpack --run-prod"
+    "firefox.build": "BROWSER=firefox $npm_package_config_webpack --run-prod",
+    "firefox.debug": "(cd dist/firefox && web-ext run)"
   },
   "repository": {
     "type": "git",

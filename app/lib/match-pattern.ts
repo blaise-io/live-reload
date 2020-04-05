@@ -10,7 +10,17 @@ const MATCH_PATTERN_RE = new RegExp(
     `^${schemeSegment}://${hostSegment}/${pathSegment}$`,
 );
 
-function toRegExp(pattern: string) {
+function sourceHost(pattern: string): string {
+    const match = MATCH_PATTERN_RE.exec(pattern);
+    if (match) {
+        let [, scheme, host] = match;
+        host = host.replace(/:\d{2,5}/, '')  // Drop host port: https://bugzilla.mozilla.org/show_bug.cgi?id=1362809
+        pattern = `${scheme}://${host}/*`;
+    }
+    return pattern
+}
+
+function toRegExp(pattern: string): RegExp {
     if (pattern === "<all_urls>") {
         return ALL_URLS_RE;
     }
@@ -21,9 +31,7 @@ function toRegExp(pattern: string) {
         return (/^$/);
     }
 
-    const scheme = match[1];
-    let host = match[2];
-    const path = match[3];
+    let [, scheme, host, path] = match;
 
     if (!host) {
         console.error("Invalid host in pattern", pattern);
@@ -68,5 +76,6 @@ function toRegExp(pattern: string) {
 export {
     ALL_URLS_RE,
     MATCH_PATTERN_RE,
+    sourceHost,
     toRegExp,
 };
