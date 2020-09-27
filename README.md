@@ -14,6 +14,7 @@ Live Reload allows monitoring iframes, stylesheets, scripts and the host page it
 
  - [**Chrome**](https://chrome.google.com/webstore/detail/live-reload/jcejoncdonagmfohjcdgohnmecaipidc) 
  - [**Firefox**](https://addons.mozilla.org/addon/live-reload/)
+ - [**Edge**](https://microsoftedge.microsoft.com/addons/detail/live-reload/oajnffmbmcjoipibgecmgbdlnhboajfh)
 
 ## Screenshots
 
