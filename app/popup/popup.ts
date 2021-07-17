@@ -84,7 +84,7 @@ document.body.addEventListener("click", (event) => {
     const popAttr = clickEl.closest("[href]");
     if (popAttr) {
         const href = popAttr.getAttribute("href") as string;
-        const url = browser.extension.getURL(href);
+        const url = browser.runtime.getURL(href);
         browser.windows.create({
             url,
             type: "popup",
