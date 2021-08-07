@@ -5,7 +5,7 @@
 export function inlineReload(type: browser.webRequest.ResourceType, url: string) {
 
     if (type === "stylesheet") {
-        const selector = document.querySelectorAll("link[rel=stylesheet]");
+        const selector = document.querySelectorAll("link[rel*=stylesheet]");
         const allLinks = Array.from(selector) as HTMLLinkElement[];
         const filtered = allLinks.filter((h) => h.href === url);
 
