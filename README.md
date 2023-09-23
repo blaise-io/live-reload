@@ -18,4 +18,6 @@ Live Reload allows monitoring iframes, stylesheets, scripts and the host page it
 
 ## Screenshots
 
+
 | ![](https://i.imgur.com/0XfwzDm.png) | ![](https://i.imgur.com/VcDafjC.png) |
+| --- | --- |
