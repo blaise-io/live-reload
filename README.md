@@ -12,7 +12,7 @@ Live Reload allows monitoring iframes, stylesheets, scripts and the host page it
 
 ## Downloads
 
- - [~**Chrome**~](https://chrome.google.com/webstore/detail/live-reload/jcejoncdonagmfohjcdgohnmecaipidc)~ No longer functional: https://github.com/blaise-io/live-reload/issues/36
+ - [~**Chrome**~](https://chrome.google.com/webstore/detail/live-reload/jcejoncdonagmfohjcdgohnmecaipidc) No longer functional: https://github.com/blaise-io/live-reload/issues/36
  - [**Firefox**](https://addons.mozilla.org/addon/live-reload/)
  - [**Edge**](https://microsoftedge.microsoft.com/addons/detail/live-reload/oajnffmbmcjoipibgecmgbdlnhboajfh)
 
